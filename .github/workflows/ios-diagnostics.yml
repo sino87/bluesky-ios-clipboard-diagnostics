@@ -1,0 +1,68 @@
+name: iOS clipboard diagnostics
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostics:
+    runs-on: macos-26
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: '1.129.0'
+            ref: '74a89832a339629e1dd1ebfda7e47c5d3c9a74dc'
+          - version: '1.135.0'
+            ref: '46d98dd457a197cee8502863b420222508f29fa6'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: bluesky-social/social-app
+          ref: ${{ matrix.ref }}
+          path: upstream
+          persist-credentials: false
+      - name: Record Xcode and Simulator versions
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes
+          xcrun simctl list devices available
+      - name: Generate the test project
+        run: |
+          gem install xcodeproj --version 1.28.1 --user-install --no-document
+          ruby generate-project.rb upstream
+      - name: Run native diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          device_id=$(xcrun simctl list devices available --json | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          iphones = [device for runtime, group in devices.items() if "iOS" in runtime for device in group if device.get("isAvailable") and device["name"].startswith("iPhone")]
+          if not iphones:
+              raise SystemExit("No available iPhone simulator")
+          print(iphones[0]["udid"])
+          ')
+          xcodebuild test \
+            -project generated/ClipboardDiagnostics.xcodeproj \
+            -scheme ClipboardDiagnostics \
+            -destination "platform=iOS Simulator,id=$device_id" \
+            -derivedDataPath DerivedData \
+            -resultBundlePath results/diagnostics.xcresult \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee results/xcodebuild.log
+      - name: Preserve test output
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: clipboard-diagnostics-${{ matrix.version }}
+          path: results/
+          retention-days: 1
+          if-no-files-found: warn

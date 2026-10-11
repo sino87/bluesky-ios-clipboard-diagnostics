@@ -1,0 +1,175 @@
+import XCTest
+import UIKit
+import UniformTypeIdentifiers
+@testable import ClipboardDiagnostics
+
+final class ClipboardDiagnosticsTests: XCTestCase {
+  private let title = "名探偵プリキュア！\n#TVer"
+  private let link = URL(string: "https://tver.jp/episodes/epgiwg33av")!
+
+  @MainActor
+  func testNativeTextOnlyPaste() async {
+    let text = await paste([[UTType.utf8PlainText.identifier: title]])
+    XCTAssertEqual(text, title)
+  }
+
+  @MainActor
+  func testNativeURLOnlyPaste() async {
+    let text = await paste([[UTType.url.identifier: link]])
+    XCTAssertTrue(text.contains(link.absoluteString), "URL-only paste: \(text.debugDescription)")
+  }
+
+  @MainActor
+  func testNativeSeparateTextAndURLPaste() async {
+    let text = await paste([
+      [UTType.utf8PlainText.identifier: title],
+      [UTType.url.identifier: link],
+    ])
+    XCTAssertTrue(text.contains(title), "Text was lost: \(text.debugDescription)")
+    XCTAssertTrue(text.contains(link.absoluteString), "URL was lost: \(text.debugDescription)")
+  }
+
+  @MainActor
+  func testNativeCombinedTextPasteControl() async {
+    let combined = "\(title) \(link.absoluteString)"
+    let text = await paste([[UTType.utf8PlainText.identifier: combined]])
+    XCTAssertEqual(text, combined)
+  }
+
+  @MainActor
+  func testShareTextOnly() async {
+    let text = await share([extensionItem([textProvider(title)])])
+    XCTAssertEqual(text, title)
+  }
+
+  @MainActor
+  func testShareURLOnly() async {
+    let text = await share([extensionItem([urlProvider(link)])])
+    XCTAssertEqual(text, link.absoluteString)
+  }
+
+  @MainActor
+  func testShareSeparateTextAndURLAttachments() async {
+    let text = await share([extensionItem([textProvider(title), urlProvider(link)])])
+    XCTAssertTrue(text?.contains(title) == true, "Shared text: \(String(describing: text))")
+    XCTAssertTrue(text?.contains(link.absoluteString) == true, "Shared URL was lost: \(String(describing: text))")
+  }
+
+  @MainActor
+  func testShareSeparateExtensionItems() async {
+    let text = await share([
+      extensionItem([textProvider(title)]),
+      extensionItem([urlProvider(link)]),
+    ])
+    XCTAssertTrue(text?.contains(title) == true)
+    XCTAssertTrue(text?.contains(link.absoluteString) == true, "Second extension item was lost: \(String(describing: text))")
+  }
+
+  @MainActor
+  func testShareDoesNotDuplicateURLAlreadyInText() async {
+    let combined = "\(title) \(link.absoluteString)"
+    let text = await share([extensionItem([textProvider(combined), urlProvider(link)])])
+    XCTAssertEqual(text, combined)
+  }
+
+  @MainActor
+  func testShareURLBeforeText() async {
+    let text = await share([extensionItem([urlProvider(link), textProvider(title)])])
+    XCTAssertTrue(text?.contains(title) == true, "Shared text was lost: \(String(describing: text))")
+    XCTAssertTrue(text?.contains(link.absoluteString) == true)
+  }
+
+  func testMediaURLClassification() {
+    XCTAssertEqual(URL(string: "file:///tmp/image.jpeg")!.type, .image)
+    XCTAssertEqual(URL(string: "file:///tmp/video.mp4")!.type, .movie)
+    XCTAssertEqual(URL(string: "https://example.com/image.jpeg")!.type, .other)
+  }
+
+  @MainActor
+  private func paste(_ items: [[String: Any]]) async -> String {
+    let pasteboard = UIPasteboard.general
+    let previousItems = pasteboard.items
+    defer { pasteboard.items = previousItems }
+    pasteboard.items = items
+    print("[clipboard-diagnostics] types=\(pasteboard.items.map { Array($0.keys).sorted() })")
+    print("[clipboard-diagnostics] strings=\(String(describing: pasteboard.strings)) urls=\(String(describing: pasteboard.urls))")
+
+    let textView = UITextView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
+    let host = UIApplication.shared.delegate as! AppDelegate
+    host.window!.rootViewController!.view.addSubview(textView)
+    defer {
+      textView.resignFirstResponder()
+      textView.removeFromSuperview()
+    }
+    textView.becomeFirstResponder()
+    textView.paste(nil)
+    try? await Task.sleep(nanoseconds: 500_000_000)
+    print("[clipboard-diagnostics] inserted=\(textView.text.debugDescription)")
+    return textView.text
+  }
+
+  @MainActor
+  private func share(_ items: [NSExtensionItem]) async -> String? {
+    let completed = expectation(description: "Share request completed")
+    let context = CapturingExtensionContext()
+    context.items = items
+    context.onComplete = { completed.fulfill() }
+    let controller = CapturingShareViewController(context: context)
+    controller.viewDidAppear(false)
+    await fulfillment(of: [completed], timeout: 5)
+    print("[clipboard-diagnostics] providers=\(items.map { $0.attachments?.map(\.registeredTypeIdentifiers) ?? [] })")
+    print("[clipboard-diagnostics] composeURL=\(String(describing: controller.composeURL))")
+    guard let url = controller.composeURL else { return nil }
+    return URLComponents(url: url, resolvingAgainstBaseURL: false)?
+      .queryItems?.first(where: { $0.name == "text" })?.value
+  }
+
+  private func textProvider(_ value: String) -> NSItemProvider {
+    NSItemProvider(object: value as NSString)
+  }
+
+  private func urlProvider(_ value: URL) -> NSItemProvider {
+    NSItemProvider(object: value as NSURL)
+  }
+
+  private func extensionItem(_ providers: [NSItemProvider]) -> NSExtensionItem {
+    let item = NSExtensionItem()
+    item.attachments = providers
+    return item
+  }
+}
+
+private final class CapturingExtensionContext: NSExtensionContext {
+  var items: [NSExtensionItem] = []
+  var onComplete: (() -> Void)?
+
+  override var inputItems: [Any] { items }
+
+  override func completeRequest(
+    returningItems items: [Any]?,
+    completionHandler: ((Bool) -> Void)? = nil
+  ) {
+    onComplete?()
+    completionHandler?(false)
+  }
+}
+
+@MainActor
+private final class CapturingShareViewController: ShareViewController {
+  let context: CapturingExtensionContext
+  var composeURL: URL?
+
+  init(context: CapturingExtensionContext) {
+    self.context = context
+    super.init(nibName: nil, bundle: nil)
+  }
+
+  required init?(coder: NSCoder) { fatalError("Use init(context:)") }
+
+  override var extensionContext: NSExtensionContext? { context }
+
+  override func openURL(_ url: URL) -> Bool {
+    composeURL = url
+    return true
+  }
+}
