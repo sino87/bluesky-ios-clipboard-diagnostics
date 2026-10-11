@@ -51,8 +51,7 @@ final class ClipboardDiagnosticsTests: XCTestCase {
   @MainActor
   func testShareSeparateTextAndURLAttachments() async {
     let text = await share([extensionItem([textProvider(title), urlProvider(link)])])
-    XCTAssertTrue(text?.contains(title) == true, "Shared text: \(String(describing: text))")
-    XCTAssertTrue(text?.contains(link.absoluteString) == true, "Shared URL was lost: \(String(describing: text))")
+    XCTAssertEqual(text, "\(title) \(link.absoluteString)")
   }
 
   @MainActor
@@ -61,8 +60,7 @@ final class ClipboardDiagnosticsTests: XCTestCase {
       extensionItem([textProvider(title)]),
       extensionItem([urlProvider(link)]),
     ])
-    XCTAssertTrue(text?.contains(title) == true)
-    XCTAssertTrue(text?.contains(link.absoluteString) == true, "Second extension item was lost: \(String(describing: text))")
+    XCTAssertEqual(text, "\(title) \(link.absoluteString)")
   }
 
   @MainActor
@@ -75,14 +73,13 @@ final class ClipboardDiagnosticsTests: XCTestCase {
   @MainActor
   func testShareURLBeforeText() async {
     let text = await share([extensionItem([urlProvider(link), textProvider(title)])])
-    XCTAssertTrue(text?.contains(title) == true, "Shared text was lost: \(String(describing: text))")
-    XCTAssertTrue(text?.contains(link.absoluteString) == true)
+    XCTAssertEqual(text, "\(title) \(link.absoluteString)")
   }
 
   @MainActor
   func testShareDuplicateURLProviders() async {
     let text = await share([extensionItem([textProvider(title), urlProvider(link), urlProvider(link)])])
-    XCTAssertEqual(text, "\(title)\n\(link.absoluteString)")
+    XCTAssertEqual(text, "\(title) \(link.absoluteString)")
   }
 
   @MainActor
@@ -90,14 +87,14 @@ final class ClipboardDiagnosticsTests: XCTestCase {
     let longerLink = "\(link.absoluteString)/details"
     let body = "\(title) \(longerLink)"
     let text = await share([extensionItem([textProvider(body), urlProvider(link)])])
-    XCTAssertEqual(text, "\(body)\n\(link.absoluteString)")
+    XCTAssertEqual(text, "\(body) \(link.absoluteString)")
   }
 
   @MainActor
   func testShareMultipleURLs() async {
     let secondLink = URL(string: "https://example.com/second")!
     let text = await share([extensionItem([urlProvider(link), urlProvider(secondLink)])])
-    XCTAssertEqual(text, "\(link.absoluteString)\n\(secondLink.absoluteString)")
+    XCTAssertEqual(text, "\(link.absoluteString) \(secondLink.absoluteString)")
   }
 
   @MainActor
@@ -111,7 +108,7 @@ final class ClipboardDiagnosticsTests: XCTestCase {
   func testShareTextDoesNotLoadImageAttachment() async {
     let image = NSItemProvider(item: UIImage(), typeIdentifier: UTType.image.identifier)
     let text = await share([extensionItem([textProvider(title), urlProvider(link), image])])
-    XCTAssertEqual(text, "\(title)\n\(link.absoluteString)")
+    XCTAssertEqual(text, "\(title) \(link.absoluteString)")
   }
 
   @MainActor

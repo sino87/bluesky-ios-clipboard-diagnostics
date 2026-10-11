@@ -1,5 +1,5 @@
 diff --git a/modules/Share-with-Bluesky/ShareViewController.swift b/modules/Share-with-Bluesky/ShareViewController.swift
-index b31f671..d3a9d02 100644
+index b31f671..7a1db06 100644
 --- a/modules/Share-with-Bluesky/ShareViewController.swift
 +++ b/modules/Share-with-Bluesky/ShareViewController.swift
 @@ -28,10 +28,13 @@ class ShareViewController: UIViewController {
@@ -48,14 +48,14 @@ index b31f671..d3a9d02 100644
 +      return
 +    }
 +    texts.removeAll(where: \.isEmpty)
-+    let text = texts.joined(separator: "\n")
++    var text = texts.joined(separator: "\n")
 +    let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
 +    let matches = detector?.matches(in: text, range: NSRange(text.startIndex..., in: text)) ?? []
 +    var seenUrls = Set(matches.compactMap { $0.url?.absoluteString })
 +    for url in urls where seenUrls.insert(url).inserted {
-+      texts.append(url)
++      text += text.isEmpty ? url : " \(url)"
 +    }
-+    self.openComposer(text: texts.joined(separator: "\n"))
++    self.openComposer(text: text)
      self.completeRequest()
    }
  
