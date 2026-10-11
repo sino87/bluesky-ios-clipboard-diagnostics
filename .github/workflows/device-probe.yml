@@ -41,6 +41,11 @@ jobs:
             -derivedDataPath DerivedDataDevice \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' \
             2>&1 | tee results/device-probe/device-build.log
+          app=generated/device-probe/ClipboardDeviceProbe.xcarchive/Products/Applications/ClipboardDeviceProbe.app
+          codesign --force --sign - --generate-entitlement-der \
+            --entitlements generated/device-probe/Probe.entitlements "$app/PlugIns/ClipboardProbeShare.appex"
+          codesign --force --sign - --generate-entitlement-der \
+            --entitlements generated/device-probe/Probe.entitlements "$app"
           python3 device-probe/package-ipa.py generated/device-probe/ClipboardDeviceProbe.xcarchive results/device-probe
           cp generated/device-probe/Probe.entitlements results/device-probe/requested-entitlements.plist
       - name: Build and inspect simulator UI

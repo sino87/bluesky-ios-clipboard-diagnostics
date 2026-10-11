@@ -85,7 +85,7 @@ extension.source_build_phase.add_file_reference(project.main_group.new_file('Sha
     settings['PRODUCT_BUNDLE_IDENTIFIER'] = target == app ? bundle_id : "#{bundle_id}.share"
     settings['TARGETED_DEVICE_FAMILY'] = '1'
     settings['SKIP_INSTALL'] = target == app ? 'NO' : 'YES'
-    settings['APPLICATION_EXTENSION_API_ONLY'] = 'NO' if target == extension
+    settings['APPLICATION_EXTENSION_API_ONLY'] = 'YES' if target == extension
   end
 end
 project.save

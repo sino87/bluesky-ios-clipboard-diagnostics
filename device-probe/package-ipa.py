@@ -24,21 +24,33 @@ def inspect(bundle):
         raise SystemExit(f"Not an iPhone binary: {binary}\n{platform}")
     if info.get("ProbeAppGroup") != group:
         raise SystemExit(f"Unexpected group configuration in {bundle}")
+    entitlements_xml = subprocess.check_output(
+        ["codesign", "-d", "--entitlements", ":-", str(bundle)], stderr=subprocess.PIPE
+    )
+    entitlements = plistlib.loads(entitlements_xml)
+    if entitlements.get("com.apple.security.application-groups") != [group]:
+        raise SystemExit(f"App Groups entitlement missing from signature: {bundle}")
+    subprocess.run(["codesign", "--verify", "--strict", str(bundle)], check=True)
     print(platform)
-    return {"bundle_id": info["CFBundleIdentifier"], "executable": info["CFBundleExecutable"]}
+    return {
+        "bundle_id": info["CFBundleIdentifier"],
+        "executable": info["CFBundleExecutable"],
+        "requested_entitlements": entitlements,
+    }
 
 
 if not extension.is_dir():
     raise SystemExit("Share extension is missing; refusing to package IPA")
 manifest = {
-    "signed": False,
+    "apple_signed": False,
+    "signature": "ad-hoc; requires Apple Account signing before installation",
     "app": inspect(app),
     "share_extension": inspect(extension),
     "app_group": group,
-    "note": "Unsigned device build. Signed provisioning and device sharing remain unverified.",
+    "note": "No Apple provisioning. Both bundles carry requested App Groups entitlements in local ad-hoc signatures. Free-account provisioning and device sharing remain unverified.",
 }
 output.mkdir(parents=True, exist_ok=True)
-ipa = output / "ClipboardDeviceProbe-unsigned.ipa"
+ipa = output / "ClipboardDeviceProbe-resign.ipa"
 with zipfile.ZipFile(ipa, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
     for path in sorted(app.rglob("*")):
         if path.is_file():

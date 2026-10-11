@@ -12,6 +12,8 @@
 
 本体と共有拡張は同じApp Groupを要求する。共有コントローラーのグループIDだけをテスト用に置き換え、投稿本文の処理はそのまま使用する。拡張のラッパーは同じ実際のproviderを先に読み、入力とcomposeリンクを共有領域へ記録する。この観察用の追加読み込み・保存と、Blueskyを含まない本体は検証構成特有の差分であり、フルアプリとの同等性は保証しない。
 
+デバイス用の未署名archiveを作った後、本体と拡張へApp Groupsの要求を含むローカルの仮署名（ad-hoc signature）を付ける。署名ツールへ必要な権限を伝えるためで、Appleの証明書・プロファイルは使わない。この状態でiPhoneへインストールできることを意味せず、SideloadlyによるApple Accountでの再署名と権限の許可が必要。生成時に両方の仮署名のEntitlementsを読み返して確認する。
+
 本体の確認データを拡張が読み、拡張の結果を本体が読み返したとき「本体 → 拡張 → 本体の連携成功」と表示する。`openDispatched`は元のコントローラーが起動を要求できるresponderを見つけた結果であり、アプリ起動完了の保証ではない。本体が自動で開かない場合は、手動で開いて「結果を更新」を押す。
 
 ## Windowsからインストール
@@ -19,7 +21,7 @@
 1. [Sideloadly公式サイト](https://sideloadly.io/)のWindows向けセットアップに従い、Sideloadlyと必要なAppleドライバーを用意する。
 2. iPhoneをUSB接続し、iPhone側でPCを信頼する。
 3. GitHub Actionsの「iPhone share probe IPA」からArtifact `iphone-share-probe` をダウンロード・展開する。
-4. `ClipboardDeviceProbe-unsigned.ipa` をSideloadlyへ読み込む。これは未署名のデバイス用ビルドで、ダウンロードしただけではインストールできない。
+4. `ClipboardDeviceProbe-resign.ipa` をSideloadlyへ読み込む。これはAppleの開発署名・プロファイルがないデバイス用ビルドで、ダウンロードしただけではインストールできない。
 5. 無料Apple AccountをSideloadlyの画面で入力し、署名・インストールする。パスワードや確認コードはGitHub、Workflow、チャットへ渡さない。
 6. **共有拡張を削除するオプションは使用しない。** App Groupsも必要なので、削除してインストール成功と扱わない。テスト用Bundle IDは既に本番と分けている。
 7. iPhoneで開発元の信頼設定を行い、要求される場合はDeveloper Modeを有効にして再起動する。Apple公式手順: [Developer Mode](https://developer.apple.com/documentation/xcode/enabling-developer-mode-on-a-device)。

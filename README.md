@@ -8,7 +8,7 @@ Blueskyの修正PRに含めず、専用の公開検証リポジトリで使う�
 
 ## iPhone実機用の検証アプリ
 
-[実機検証アプリのセットアップ](device-probe/README.md)に、本体＋実際のShare Extension＋App Groupsを使った小さな検証構成を追加した。手動Workflow `iPhone share probe IPA` は未署名のデバイス用IPAを生成する。無料Apple Accountでの署名・インストール・共有連携は、Windowsと実機で別途確認する。コードのビルドやIPAの生成成功だけでは、この確認が完了したことにはならない。
+[実機検証アプリのセットアップ](device-probe/README.md)に、本体＋実際のShare Extension＋App Groupsを使った小さな検証構成を追加した。手動Workflow `iPhone share probe IPA` はデバイス用の再署名用IPAを生成する。App Groupsの要求を残す仮署名があり、Appleの開発署名・プロファイルはない。無料Apple Accountでの署名・インストール・共有連携は、Windowsと実機で別途確認する。コードのビルドやIPAの生成成功だけでは、この確認が完了したことにはならない。
 
 ## 調べる範囲
 
