@@ -45,3 +45,42 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.translations.outcome == 'success' }}
         working-directory: upstream
         run: pnpm typecheck
+
+  native-lint:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: bluesky-social/social-app
+          ref: '46d98dd457a197cee8502863b420222508f29fa6'
+          path: upstream
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413
+        with:
+          version: '11.28.5'
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.19.0'
+      - name: Install native linters
+        run: |
+          brew install swiftlint ktlint
+          swiftlint version
+          ktlint --version
+      - name: Apply the share fix
+        run: |
+          git -C upstream apply --check ../share-text-url.patch
+          git -C upstream apply ../share-text-url.patch
+      - name: Native lint
+        id: lint
+        working-directory: upstream
+        run: pnpm --config.verify-deps-before-run=false run lint-native
+      - name: Compare upstream if native lint fails
+        if: ${{ failure() && steps.lint.outcome == 'failure' }}
+        working-directory: upstream
+        run: |
+          git apply --reverse ../share-text-url.patch
+          pnpm --config.verify-deps-before-run=false run lint-native
