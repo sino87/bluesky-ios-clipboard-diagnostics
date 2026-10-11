@@ -1,5 +1,5 @@
 diff --git a/modules/Share-with-Bluesky/ShareViewController.swift b/modules/Share-with-Bluesky/ShareViewController.swift
-index b31f671..070267c 100644
+index b31f671..d3a9d02 100644
 --- a/modules/Share-with-Bluesky/ShareViewController.swift
 +++ b/modules/Share-with-Bluesky/ShareViewController.swift
 @@ -28,10 +28,13 @@ class ShareViewController: UIViewController {
@@ -18,7 +18,7 @@ index b31f671..070267c 100644
        } else if firstAttachment.hasItemConformingToTypeIdentifier("public.image") {
          await self.handleImages(items: attachments)
        } else if firstAttachment.hasItemConformingToTypeIdentifier("public.movie") {
-@@ -42,17 +45,42 @@ class ShareViewController: UIViewController {
+@@ -42,17 +45,46 @@ class ShareViewController: UIViewController {
      }
    }
  
@@ -33,8 +33,7 @@ index b31f671..070267c 100644
 +
 +    for item in items {
 +      if item.hasItemConformingToTypeIdentifier("public.text"),
-+         let text = try? await item.loadItem(forTypeIdentifier: "public.text") as? String,
-+         !text.isEmpty {
++         let text = try? await item.loadItem(forTypeIdentifier: "public.text") as? String {
 +        texts.append(text)
 +      }
 +      if item.hasItemConformingToTypeIdentifier("public.url"),
@@ -44,6 +43,11 @@ index b31f671..070267c 100644
        }
      }
 +
++    guard !texts.isEmpty || !urls.isEmpty else {
++      self.completeRequest()
++      return
++    }
++    texts.removeAll(where: \.isEmpty)
 +    let text = texts.joined(separator: "\n")
 +    let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
 +    let matches = detector?.matches(in: text, range: NSRange(text.startIndex..., in: text)) ?? []
@@ -67,7 +71,7 @@ index b31f671..070267c 100644
      if let data = try? await item.loadItem(forTypeIdentifier: "public.url") as? URL {
        switch data.type {
        case .image:
-@@ -62,9 +90,11 @@ class ShareViewController: UIViewController {
+@@ -62,9 +94,11 @@ class ShareViewController: UIViewController {
          await handleVideos(items: [item])
          return
        case .other:

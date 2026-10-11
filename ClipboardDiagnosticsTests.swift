@@ -114,6 +114,19 @@ final class ClipboardDiagnosticsTests: XCTestCase {
     XCTAssertEqual(text, "\(title)\n\(link.absoluteString)")
   }
 
+  @MainActor
+  func testShareEmptyText() async {
+    let text = await share([extensionItem([textProvider("")])])
+    XCTAssertEqual(text, "")
+  }
+
+  @MainActor
+  func testShareUnreadableTextDoesNotOpenComposer() async {
+    let provider = NSItemProvider(item: NSNumber(value: 42), typeIdentifier: UTType.text.identifier)
+    let text = await share([extensionItem([provider])])
+    XCTAssertNil(text)
+  }
+
   func testMediaURLClassification() {
     XCTAssertEqual(URL(string: "file:///tmp/image.jpeg")!.type, .image)
     XCTAssertEqual(URL(string: "file:///tmp/video.mp4")!.type, .movie)
