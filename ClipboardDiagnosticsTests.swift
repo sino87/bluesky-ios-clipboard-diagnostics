@@ -79,6 +79,41 @@ final class ClipboardDiagnosticsTests: XCTestCase {
     XCTAssertTrue(text?.contains(link.absoluteString) == true)
   }
 
+  @MainActor
+  func testShareDuplicateURLProviders() async {
+    let text = await share([extensionItem([textProvider(title), urlProvider(link), urlProvider(link)])])
+    XCTAssertEqual(text, "\(title)\n\(link.absoluteString)")
+  }
+
+  @MainActor
+  func testShareURLPrefixIsNotADuplicate() async {
+    let longerLink = "\(link.absoluteString)/details"
+    let body = "\(title) \(longerLink)"
+    let text = await share([extensionItem([textProvider(body), urlProvider(link)])])
+    XCTAssertEqual(text, "\(body)\n\(link.absoluteString)")
+  }
+
+  @MainActor
+  func testShareMultipleURLs() async {
+    let secondLink = URL(string: "https://example.com/second")!
+    let text = await share([extensionItem([urlProvider(link), urlProvider(secondLink)])])
+    XCTAssertEqual(text, "\(link.absoluteString)\n\(secondLink.absoluteString)")
+  }
+
+  @MainActor
+  func testShareTextDoesNotAppendMediaFileURL() async {
+    let fileURL = URL(string: "file:///tmp/image.jpeg")!
+    let text = await share([extensionItem([textProvider(title), urlProvider(fileURL)])])
+    XCTAssertEqual(text, title)
+  }
+
+  @MainActor
+  func testShareTextDoesNotLoadImageAttachment() async {
+    let image = NSItemProvider(item: UIImage(), typeIdentifier: UTType.image.identifier)
+    let text = await share([extensionItem([textProvider(title), urlProvider(link), image])])
+    XCTAssertEqual(text, "\(title)\n\(link.absoluteString)")
+  }
+
   func testMediaURLClassification() {
     XCTAssertEqual(URL(string: "file:///tmp/image.jpeg")!.type, .image)
     XCTAssertEqual(URL(string: "file:///tmp/video.mp4")!.type, .movie)
@@ -93,17 +128,26 @@ final class ClipboardDiagnosticsTests: XCTestCase {
     pasteboard.items = items
     print("[clipboard-diagnostics] types=\(pasteboard.items.map { Array($0.keys).sorted() })")
     print("[clipboard-diagnostics] strings=\(String(describing: pasteboard.strings)) urls=\(String(describing: pasteboard.urls))")
+    if let data = pasteboard.data(forPasteboardType: UTType.url.identifier) {
+      let propertyList = try? PropertyListSerialization.propertyList(from: data, format: nil)
+      print("[clipboard-diagnostics] urlData=\(String(describing: String(data: data, encoding: .utf8))) urlPropertyList=\(String(describing: propertyList))")
+    }
 
     let textView = UITextView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
+    let pasted = expectation(description: "Native text view changed after paste")
+    pasted.assertForOverFulfill = false
+    let delegate = CapturingTextViewDelegate()
+    delegate.onChange = { pasted.fulfill() }
+    textView.delegate = delegate
     let host = UIApplication.shared.delegate as! AppDelegate
     host.window!.rootViewController!.view.addSubview(textView)
     defer {
       textView.resignFirstResponder()
       textView.removeFromSuperview()
     }
-    textView.becomeFirstResponder()
+    XCTAssertTrue(textView.becomeFirstResponder(), "Paste test must have a focused text view")
     textView.paste(nil)
-    try? await Task.sleep(nanoseconds: 500_000_000)
+    await fulfillment(of: [pasted], timeout: 10)
     print("[clipboard-diagnostics] inserted=\(textView.text.debugDescription)")
     return textView.text
   }
@@ -147,6 +191,15 @@ final class ClipboardDiagnosticsTests: XCTestCase {
     let item = NSExtensionItem()
     item.attachments = providers
     return item
+  }
+}
+
+@MainActor
+private final class CapturingTextViewDelegate: NSObject, UITextViewDelegate {
+  var onChange: (() -> Void)?
+
+  func textViewDidChange(_ textView: UITextView) {
+    onChange?()
   }
 }
 
