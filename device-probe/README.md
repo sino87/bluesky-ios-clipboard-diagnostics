@@ -2,6 +2,12 @@
 
 この検証アプリは、修正済みBlueskyの共有コントローラーを実際のShare Extensionへ組み込み、送信元アプリの共有データと生成された本文を本体で表示する。Bluesky全体の実機テストや投稿成功を確認するアプリではない。
 
+## ビルド結果
+
+[ビルド 38140504618](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38140504618)は成功した。ソースは診断リポジトリの`6118443`。本体と共有拡張のiPhone用バイナリ、両方の仮署名に同じApp Groups要求があること、署名の整合性、IPA生成を確認した。生成IPAのSHA-256は`bb8c4d9a7e8bcfde11ee46b436f51cc1274c47f1f5060edfe8b317c005c04baa`。Windowsへダウンロード後も一致した。
+
+Simulator用のビルドと起動・スクリーンショット取得も成功した。Simulatorは`CODE_SIGNING_ALLOWED=NO`で起動しており、画面は「App Groups：確認失敗」だった。この実行で共有コンテナーの連携が成功したとは扱わない。無料Apple Accountでの再署名、iPhoneへのインストール、実機でのApp Groupsと直接共有は未確認。
+
 ## 構成と判定
 
 - 本体: `org.sino87.clipboardprobe`
