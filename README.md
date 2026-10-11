@@ -1,6 +1,8 @@
 # iOS共有・ペーストの診断用テスト
 
-状態: **Xcode 26.6 / iOS 26.4.1 Simulatorでコンパイルとテストを実行済み。共有の別添付・別アイテムの欠落を再現。修正差分は検証中。**
+状態: **Xcode 26.6 / iOS 26.4.1 Simulatorで共有の別添付・別アイテムの欠落を再現。最終修正差分は18件のXCTestにすべて成功。**
+
+[最終修正版の18ケース](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123423399/job/114422690014)と[Lint・iOS/Android/WebのTypeScriptチェック](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123425316/job/114422695781)が成功した。ネイティブLintは元コードにもある25件のSwiftLint違反（12 errors）で失敗し、修正前後で同じ診断だった。ktlintは未実行。実機TVer、普通のBluesky投稿欄でのペースト、署名・インストールの成功は示していない。
 
 Blueskyの修正PRに含めず、専用の公開検証リポジトリで使う。Apple Account、署名証明書、Blueskyのログインは不要。Workflowは手動実行だけで、GitHubへの作成・Push・実行はユーザーの確認後に行う。
 
