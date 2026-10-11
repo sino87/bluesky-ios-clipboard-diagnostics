@@ -4,7 +4,11 @@
 
 [最終修正版の18ケース](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123423399/job/114422690014)と[Lint・iOS/Android/WebのTypeScriptチェック](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123425316/job/114422695781)が成功した。ネイティブLintは元コードにもある25件のSwiftLint違反（12 errors）で失敗し、修正前後で同じ診断だった。ktlintは未実行。実機TVer、普通のBluesky投稿欄でのペースト、署名・インストールの成功は示していない。
 
-Blueskyの修正PRに含めず、専用の公開検証リポジトリで使う。Apple Account、署名証明書、Blueskyのログインは不要。Workflowは手動実行だけで、GitHubへの作成・Push・実行はユーザーの確認後に行う。
+Blueskyの修正PRに含めず、専用の公開検証リポジトリで使う。SimulatorテストとクラウドビルドにはApple Account、署名証明書、Blueskyのログインは不要。Workflowは手動実行だけで、GitHubへの作成・Push・実行はユーザーの確認後に行う。
+
+## iPhone実機用の検証アプリ
+
+[実機検証アプリのセットアップ](device-probe/README.md)に、本体＋実際のShare Extension＋App Groupsを使った小さな検証構成を追加した。手動Workflow `iPhone share probe IPA` は未署名のデバイス用IPAを生成する。無料Apple Accountでの署名・インストール・共有連携は、Windowsと実機で別途確認する。コードのビルドやIPAの生成成功だけでは、この確認が完了したことにはならない。
 
 ## 調べる範囲
 
