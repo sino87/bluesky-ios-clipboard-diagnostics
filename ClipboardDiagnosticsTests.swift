@@ -115,6 +115,17 @@ final class ClipboardDiagnosticsTests: XCTestCase {
     context.items = items
     context.onComplete = { completed.fulfill() }
     let controller = CapturingShareViewController(context: context)
+    print("[clipboard-diagnostics] contextItems=\(controller.extensionContext?.inputItems.count ?? -1)")
+    for provider in items.flatMap({ $0.attachments ?? [] }) {
+      for identifier in ["public.text", "public.url"] where provider.hasItemConformingToTypeIdentifier(identifier) {
+        do {
+          let value = try await provider.loadItem(forTypeIdentifier: identifier)
+          print("[clipboard-diagnostics] loaded \(identifier): type=\(type(of: value)) string=\(String(describing: value as? String)) url=\(String(describing: value as? URL))")
+        } catch {
+          print("[clipboard-diagnostics] loadFailed \(identifier): \(error)")
+        }
+      }
+    }
     controller.viewDidAppear(false)
     await fulfillment(of: [completed], timeout: 5)
     print("[clipboard-diagnostics] providers=\(items.map { $0.attachments?.map(\.registeredTypeIdentifiers) ?? [] })")
@@ -125,11 +136,11 @@ final class ClipboardDiagnosticsTests: XCTestCase {
   }
 
   private func textProvider(_ value: String) -> NSItemProvider {
-    NSItemProvider(object: value as NSString)
+    NSItemProvider(item: value as NSString, typeIdentifier: UTType.utf8PlainText.identifier)
   }
 
   private func urlProvider(_ value: URL) -> NSItemProvider {
-    NSItemProvider(object: value as NSURL)
+    NSItemProvider(item: value as NSURL, typeIdentifier: UTType.url.identifier)
   }
 
   private func extensionItem(_ providers: [NSItemProvider]) -> NSExtensionItem {
