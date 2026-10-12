@@ -65,7 +65,18 @@ jobs:
             --entitlements generated/device-probe/Probe.entitlements "$app"
           python3 device-probe/package-ipa.py generated/device-probe/ClipboardDeviceProbe.xcarchive results/device-probe
           cp generated/device-probe/Probe.entitlements results/device-probe/requested-entitlements.plist
+      - name: Preserve IPA, build evidence, and setup guide
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: iphone-share-probe
+          path: |
+            results/device-probe/
+            device-probe/README.md
+          retention-days: 1
+          if-no-files-found: warn
       - name: Build and inspect simulator UI
+        timeout-minutes: 5
         shell: bash
         run: |
           set -euo pipefail
@@ -91,13 +102,13 @@ jobs:
           xcrun simctl launch "$device_id" org.sino87.clipboardprobe
           sleep 3
           xcrun simctl io "$device_id" screenshot results/device-probe/simulator-ui.png
-      - name: Preserve IPA, build evidence, and setup guide
+      - name: Preserve simulator evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: iphone-share-probe
+          name: iphone-share-probe-ui
           path: |
-            results/device-probe/
-            device-probe/README.md
+            results/device-probe/simulator-build.log
+            results/device-probe/simulator-ui.png
           retention-days: 1
           if-no-files-found: warn

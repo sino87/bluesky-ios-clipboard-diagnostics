@@ -6,7 +6,7 @@
 
 [ビルド 38140504618](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38140504618)は成功した。ソースは診断リポジトリの`6118443`。本体と共有拡張のiPhone用バイナリ、両方の仮署名に同じApp Groups要求があること、署名の整合性、IPA生成を確認した。生成IPAのSHA-256は`bb8c4d9a7e8bcfde11ee46b436f51cc1274c47f1f5060edfe8b317c005c04baa`。Windowsへダウンロード後も一致した。
 
-Simulator用のビルドと起動・スクリーンショット取得も成功した。Simulatorは`CODE_SIGNING_ALLOWED=NO`で起動しており、画面は「App Groups：確認失敗」だった。この実行で共有コンテナーの連携が成功したとは扱わない。無料Apple Accountでの再署名、iPhoneへのインストール、実機でのApp Groupsと直接共有は未確認。
+Simulator用のビルドと起動・スクリーンショット取得も成功した。Simulatorは`CODE_SIGNING_ALLOWED=NO`で起動しており、画面は「App Groups：確認失敗」だった。この実行で共有コンテナーの連携が成功したとは扱わない。その後、Sideloadlyでの再署名・iPhoneへのインストールと起動はユーザーが確認したが、本体のApp Groupsアクセスは失敗した。直接共有と修正後の本文は未検証。
 
 ## 構成と判定
 
@@ -20,7 +20,7 @@ Simulator用のビルドと起動・スクリーンショット取得も成功�
 
 拡張のラッパーは同じ実際のproviderを先に読み、入力とcomposeリンクを共有領域へ記録する。この観察用の追加読み込み・保存と、Blueskyを含まない本体は検証構成特有の差分であり、フルアプリとの同等性は保証しない。
 
-デバイス用の未署名archiveを作った後、本体と拡張へApp Groupsの要求を含むローカルの仮署名（ad-hoc signature）を付ける。署名ツールへ必要な権限を伝えるためで、Appleの証明書・プロファイルは使わない。この状態でiPhoneへインストールできることを意味せず、SideloadlyによるApple Accountでの再署名と権限の許可が必要。生成時に両方の仮署名のEntitlementsを読み返して確認する。
+デバイス用の未署名archiveを作った後、本体と拡張へApp Groupsの要求を含むローカルの仮署名（ad-hoc signature）を付ける。署名ツールへ必要な権限を伝えるためで、Appleの証明書・プロファイルは使わない。この状態でiPhoneへインストールできることを意味せず、Apple Accountでの再署名と権限の許可が必要。生成時に両方の仮署名のEntitlementsを読み返して確認する。
 
 本体の確認データを拡張が読み、拡張の結果を本体が読み返したとき「本体 → 拡張 → 本体の連携成功」と表示する。`openDispatched`は元のコントローラーが起動を要求できるresponderを見つけた結果であり、アプリ起動完了の保証ではない。本体が自動で開かない場合は、手動で開いて「結果を更新」を押す。
 
@@ -34,7 +34,7 @@ Simulator用のビルドと起動・スクリーンショット取得も成功�
 6. **共有拡張を削除するオプションは使用しない。** App Groupsも必要なので、削除してインストール成功と扱わない。テスト用Bundle IDは既に本番と分けている。
 7. iPhoneで開発元の信頼設定を行い、要求される場合はDeveloper Modeを有効にして再起動する。Apple公式手順: [Developer Mode](https://developer.apple.com/documentation/xcode/enabling-developer-mode-on-a-device)。
 
-無料署名は通常7日で期限切れになる。Sideloadlyが今回のApp Groupを無料署名できるかは未確認であり、インストールログと実際の画面で判定する。公式情報: [無料アカウントの制限](https://developer.apple.com/help/account/basics/about-your-developer-account/)、[App Groupsの対応表](https://developer.apple.com/help/account/reference/supported-capabilities-ios/)。
+無料署名は通常7日で期限切れになる。今回のSideloadly署名では本体のプロファイルにApp Groupsがなく、実機の共有領域アクセスも失敗した。以下の診断結果を確認し、同じ設定での再インストールだけでは解決済みと扱わない。公式情報: [無料アカウントの制限](https://developer.apple.com/help/account/basics/about-your-developer-account/)、[App Groupsの対応表](https://developer.apple.com/help/account/reference/supported-capabilities-ios/)。
 
 ### 実機でApp Groupsの確認が失敗した場合
 
@@ -48,21 +48,21 @@ PCのSideloadlyキャッシュにはプロファイルのないIPAしか見つ�
 
 追加の実機画面で、本体のプロファイルには「App Groupsなし」「設定IDの許可なし」と表示された。拡張のプロファイルは見つからず未判定だった。したがって、現在のSideloadly署名では少なくとも本体が要求するグループが許可されていない。無料Apple Account一般の不可能性や、拡張自体の削除まではこの画面から断定しない。
 
-## AltStore Classicによる次の署名候補
+## AltServerによる次の署名候補
 
 [Windows版AltServerのソース](https://github.com/rileytestut/AltServer-Windows/blob/41fb42bc78056f59e64566f7561ba405ef59b5d9/AltServer/AltServerApp.cpp)では、本体と各拡張について、App Groupsを有効化・登録・割り当てた後にプロファイルを取得する処理を確認した。グループIDへチームIDを付け、署名時に各Info.plistの`ALTAppGroups`へ割り当て後のIDを記録する。ビルド3はこのメタデータに対応する。今回の端末・アカウントでの署名成功は未検証。
 
 1. [公式Windows手順](https://faq.altstore.io/altstore-classic/how-to-install-altstore-windows)からAltServerを導入する。既に導入したWeb版iTunesとiCloudを使う。対象はAltStore Classicで、地域限定の別配布方式ではない。
-2. 同じApple Accountと接続済みiPhoneを使い、公式手順でAltStoreをiPhoneへインストールする。
-3. 更新したビルド3のIPAをiPhoneへ転送し、AltStoreから読み込む。共有拡張を含む構成を保持する。
+2. 承認後、iPhoneをUSB接続し、Shiftキーを押しながらWindowsの通知領域にあるAltServerアイコンをクリックする。
+3. 「Sideload .ipa」からiPhoneを選び、Windowsにあるビルド3のIPAを選択する。認証はAltServerの画面で行い、共有拡張を含む構成を保持する。この直接インストール機能は[公式リリースノート](https://faq.altstore.io/release-notes/altserver)と公開Windowsコードで確認した。iPhoneにAltStoreアプリを先に追加する必要はない。
 4. 「共有テスト3」を開き、本体のApp Groups読み書きと、本体・拡張それぞれのプロファイル表示を確認する。
 
 AltStore側でBundle IDが変わる可能性があるため、旧Sideloadly版と区別する表示名・起動スキームを使用する。確認した公開コードの`FetchCertificate`には、新規証明書を準備する際に既存の開発証明書を取り消して再試行する経路がある。これにより、取り消した証明書で署名されたSideloadlyのアプリなどが起動できなくなる可能性がある。AltServerでのApple Account認証・署名は、この影響を説明してユーザーの確認を得るまで実行しない。こちらではアプリ削除・証明書取り消し・AltServer導入・Apple Account認証を行っていない。
 
 ## iPhoneで確認する順序
 
-1. 「共有テスト」を一度開く。App Groupsが「本体から読み書き可能」になることを確認する。ここで失敗する場合は、まだ共有の修正判定へ進まない。
-2. 送信元アプリの共有シートで「共有テスト」を選ぶ。見えない場合は共有先一覧の編集から探す。
+1. ビルド3では「共有テスト3」を一度開く。App Groupsが「本体から読み書き可能」になることを確認する。ここで失敗する場合は、まだ共有の修正判定へ進まない。
+2. 送信元アプリの共有シートで「共有テスト3」を選ぶ。見えない場合は共有先一覧の編集から探す。
 3. 本体へ戻り、必要なら「結果を更新」を押す。
 4. 「本体 → 拡張 → 本体の連携成功」と「composeリンク取得済み」を確認する。
 5. 「修正済み共有処理が作った本文」に元の本文とURLが両方あるか、URLが重複していないかを確認する。
@@ -79,7 +79,7 @@ Media Feature Packは[Windows N版向け](https://support.microsoft.com/en-us/wi
 
 2026-10-12のユーザーPCの読み取り確認では、EditionIDは`Professional`（N版ではない）、`MediaPlayback`と`WindowsMediaPlayer`はWMIの`InstallState = 2`（無効）だった。[WMIの公式定義](https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-optionalfeature)では2はDisabled、3がAbsentである。Media FoundationのDLLは存在していた。管理者権限が必要なDISMの詳細照会は実行できなかったため、コンポーネント修復が必要かまでは未確認。
 
-次に試す対象は「Windows Media Player 従来版」の追加・有効化。[Microsoftの手順](https://support.microsoft.com/en-us/windows/apps/windowsmediaplayer/troubleshoot-windows-media-player-errors?id=8163)では、Windows 11の設定 → システム → オプション機能 → 機能の追加から従来版を追加する。必要ならコントロールパネルの「Windowsの機能の有効化または無効化」でメディア機能を有効にする。この追加とiCloudの再インストールの成功は、まだ確認していない。
+この状態では「Windows Media Player 従来版」の追加・有効化を確認する。[Microsoftの手順](https://support.microsoft.com/en-us/windows/apps/windowsmediaplayer/troubleshoot-windows-media-player-errors?id=8163)では、Windows 11の設定 → システム → オプション機能 → 機能の追加から従来版を追加する。必要ならコントロールパネルの「Windowsの機能の有効化または無効化」でメディア機能を有効にする。案内後、ユーザーはiCloudのインストール成功とSideloadlyによる端末認識を報告した。
 
 - インストール失敗: Sideloadlyのエラー本文（Apple Account、端末ID、署名情報を伏せる）。
 - App Groups失敗: 本体または共有拡張の状態表示。インストールできただけで署名要件を満たしたとは判断しない。
