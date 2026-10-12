@@ -14,13 +14,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - version: '1.129.0'
-            ref: '74a89832a339629e1dd1ebfda7e47c5d3c9a74dc'
-            variant: baseline
           - version: '1.135.0'
-            ref: '46d98dd457a197cee8502863b420222508f29fa6'
-            variant: baseline
+            repository: sino87/social-app
+            ref: '70271fa73dc593bc53a96a1c4d05e4a7f1ac73a4'
+            variant: encoding-baseline
           - version: '1.135.0'
+            repository: bluesky-social/social-app
             ref: '46d98dd457a197cee8502863b420222508f29fa6'
             variant: fixed
     steps:
@@ -29,10 +28,17 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          repository: bluesky-social/social-app
+          repository: ${{ matrix.repository }}
           ref: ${{ matrix.ref }}
           path: upstream
           persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.19.0'
+      - name: Test receiver verification
+        env:
+          BLUESKY_SOURCE_ROOT: upstream
+        run: node --test verify-compose-links.test.mjs
       - name: Record Xcode and Simulator versions
         run: |
           xcodebuild -version
@@ -73,6 +79,9 @@ jobs:
             -default-test-execution-time-allowance 30 \
             -maximum-test-execution-time-allowance 60 \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee results/xcodebuild.log
+      - name: Verify native compose links in the Bluesky receiver
+        if: ${{ !cancelled() }}
+        run: node verify-compose-links.mjs results/xcodebuild.log upstream
       - name: Preserve test output
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

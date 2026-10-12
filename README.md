@@ -1,8 +1,8 @@
 # Bluesky iOS sharing and paste diagnostics
 
-This repository contains an isolated test harness and device verification builds for a focused iOS Share Extension fix. The proposed application change is maintained separately in the [Bluesky fork](https://github.com/bluesky-social/social-app/compare/main...sino87:social-app:fix/ios-shared-text-url).
+This repository contains an isolated test harness and device verification builds for a focused iOS Share Extension fix. The proposed application change is maintained separately in [Bluesky PR #11948](https://github.com/bluesky-social/social-app/pull/11948).
 
-**Current result:** the patched controller passes 19 native tests. On an iPhone, sharing from the same source app drops the URL in the installed official app but preserves the caption and URL in the patched full-app build. A single-photo share also succeeded. Ordinary paste succeeded in both apps using the same clipboard under the current conditions; the patch does not change paste handling.
+**Last verified result:** the original text/URL patch passes 19 native tests. On an iPhone, sharing from the same source app drops the URL in the installed official app but preserves the caption and URL in the patched full-app build. A single-photo share also succeeded. Ordinary paste succeeded in both apps using the same clipboard under the current conditions; the patch does not change paste handling. The additional encoding revision below still needs native and device execution.
 
 ## Verification paths
 
@@ -20,11 +20,30 @@ The harness copies the upstream `ShareViewController.swift` into an isolated UIK
 
 Cases cover text-only and URL-only input, separate attachments and extension items, reversed attachment order, duplicate URLs, distinct URLs with a shared prefix, multiple URLs, empty or unreadable text, text mixed with images or file URLs, and existing file/media URL classification. A regression also covers a caption duplicated in item metadata and a text attachment.
 
-The workflow compares the official 1.129.0 tag, pinned upstream commit `46d98dd457a197cee8502863b420222508f29fa6`, and that commit with `share-text-url.patch`. The [unpatched regression fails](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38195607360/job/114637433920); the patched job passes all 19 tests. The overall workflow is expected to fail when it includes failing baseline jobs. Build failures and assertion failures are recorded separately.
+Earlier runs compared the official 1.129.0 tag, pinned upstream commit `46d98dd457a197cee8502863b420222508f29fa6`, and that commit with the original patch. The [unpatched regression fails](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38195607360/job/114637433920); the original patched job passes all 19 tests. The overall workflow is expected to fail when it includes failing baseline jobs. Build failures and assertion failures are recorded separately.
 
 Fixtures use typed `NSItemProvider` values, including a URL object for `public.url`. They do not reproduce a pasteboard viewer's XML byte representation. The Simulator runtime is printed by the workflow and need not match the physical device's OS.
 
 The four ordinary-paste fixtures use a standard `UITextView`, not React Native or `expo-paste-input`. They preserve text and URL items, but do not establish behavior in the full Bluesky composer. Current device paste observations are recorded separately.
+
+### Encoding revision awaiting native execution
+
+Five additional tests bring the suite to 24 cases. They cover query separators, literal plus signs, Japanese text and line breaks, separate text/URL attachments, fragments, and percent escapes. The prepared workflow compares PR commit `70271fa73dc593bc53a96a1c4d05e4a7f1ac73a4` before the encoding correction with the updated patch applied to the pinned upstream commit.
+
+The tests emit the actual Swift-generated compose links. `verify-compose-links.mjs` passes those links through the corresponding Bluesky `parseLinkingUrl.ts` and checks that `searchParams.get('text')` exactly matches the expected text. Missing native records fail verification; synthetic links are not substituted for native output.
+
+The receiver verifier also has four local tests using literal control links. These check the verifier and the JavaScript receiver, not Swift execution. Run them on Windows with the bundled or installed Node 24 runtime:
+
+```powershell
+$env:BLUESKY_SOURCE_ROOT = 'C:\path\to\social-app'
+node --test verify-compose-links.test.mjs
+```
+
+After a native run, verify its recorded links with:
+
+```powershell
+node verify-compose-links.mjs results/xcodebuild.log $env:BLUESKY_SOURCE_ROOT
+```
 
 ## Project checks
 

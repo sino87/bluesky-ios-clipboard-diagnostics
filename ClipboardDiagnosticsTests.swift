@@ -135,6 +135,41 @@ final class ClipboardDiagnosticsTests: XCTestCase {
     XCTAssertNil(text)
   }
 
+  @MainActor
+  func testShareTextPreservesQueryParameters() async throws {
+    let text = "A caption\nhttps://example.com/?a=1&b=2"
+    try await assertComposeText(text, from: [textProvider(text)], caseName: "query-text")
+  }
+
+  @MainActor
+  func testShareURLPreservesQueryParameters() async throws {
+    let url = URL(string: "https://example.com/?a=1&b=2")!
+    try await assertComposeText(url.absoluteString, from: [urlProvider(url)], caseName: "query-url")
+  }
+
+  @MainActor
+  func testShareTextPreservesPlusSigns() async throws {
+    let text = "A+B A++B +"
+    try await assertComposeText(text, from: [textProvider(text)], caseName: "plus-text")
+  }
+
+  @MainActor
+  func testShareSeparateTextAndURLPreserveSpecialCharacters() async throws {
+    let caption = "共有テキスト 😀\nA+B"
+    let url = URL(string: "https://example.com/?value=one+two&encoded=%2B#section")!
+    try await assertComposeText(
+      "\(caption) \(url.absoluteString)",
+      from: [textProvider(caption), urlProvider(url)],
+      caseName: "separate-special-text-url"
+    )
+  }
+
+  @MainActor
+  func testShareTextPreservesFragmentsAndPercentEscapes() async throws {
+    let text = "Keep %2B and %26, spaces, = and #\nhttps://example.com/?value=%2B%26#section"
+    try await assertComposeText(text, from: [textProvider(text)], caseName: "percent-fragment-text")
+  }
+
   func testMediaURLClassification() {
     XCTAssertEqual(URL(string: "file:///tmp/image.jpeg")!.type, .image)
     XCTAssertEqual(URL(string: "file:///tmp/video.mp4")!.type, .movie)
@@ -175,6 +210,32 @@ final class ClipboardDiagnosticsTests: XCTestCase {
 
   @MainActor
   private func share(_ items: [NSExtensionItem]) async -> String? {
+    guard let url = await shareURL(items) else { return nil }
+    return URLComponents(url: url, resolvingAgainstBaseURL: false)?
+      .queryItems?.first(where: { $0.name == "text" })?.value
+  }
+
+  @MainActor
+  private func assertComposeText(
+    _ text: String,
+    from providers: [NSItemProvider],
+    caseName: String
+  ) async throws {
+    let generatedURL = await shareURL([extensionItem(providers)])
+    let url = try XCTUnwrap(generatedURL)
+    let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+    XCTAssertEqual(components.queryItems?.map(\.name), ["text"])
+    XCTAssertEqual(components.queryItems?.first?.value, text)
+    XCTAssertFalse(components.percentEncodedQuery?.contains("+") ?? false)
+    let data = try JSONSerialization.data(
+      withJSONObject: ["case": caseName, "text": text, "url": url.absoluteString],
+      options: [.sortedKeys]
+    )
+    print("[compose-encoding] \(String(decoding: data, as: UTF8.self))")
+  }
+
+  @MainActor
+  private func shareURL(_ items: [NSExtensionItem]) async -> URL? {
     let completed = expectation(description: "Share request completed")
     let context = CapturingExtensionContext()
     context.items = items
@@ -195,9 +256,7 @@ final class ClipboardDiagnosticsTests: XCTestCase {
     await fulfillment(of: [completed], timeout: 5)
     print("[clipboard-diagnostics] providers=\(items.map { $0.attachments?.map(\.registeredTypeIdentifiers) ?? [] })")
     print("[clipboard-diagnostics] composeURL=\(String(describing: controller.composeURL))")
-    guard let url = controller.composeURL else { return nil }
-    return URLComponents(url: url, resolvingAgainstBaseURL: false)?
-      .queryItems?.first(where: { $0.name == "text" })?.value
+    return controller.composeURL
   }
 
   private func textProvider(_ value: String) -> NSItemProvider {
