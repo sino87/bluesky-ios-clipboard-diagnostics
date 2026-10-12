@@ -10,7 +10,7 @@ Blueskyの修正PRに含めず、専用の公開検証リポジトリで使う�
 
 ## Bluesky本体の検証用IPA
 
-[本体のビルド構成と実機テスト手順](bluesky-build/README.md)を用意した。公式アプリとは別のIDで、実際の投稿画面・通常ペースト・Share Extension・App Groupsを残して確認する。構成を用意した段階で、IPAビルドと実機テストは未確認。
+[本体のビルド構成と実機テスト手順](bluesky-build/README.md)を用意した。公式アプリとは別のIDで、実際の投稿画面・通常ペースト・Share Extension・App Groupsを残して確認する。修正版のIPAビルドとパッケージ検査は成功した。無料署名・インストール・実機テストは未確認。
 
 ## iPhone実機用の検証アプリ
 
