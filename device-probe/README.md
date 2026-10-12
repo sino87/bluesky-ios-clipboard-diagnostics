@@ -4,6 +4,12 @@
 
 ## ビルド結果
 
+[ビルド3のWorkflow 38191563307](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38191563307)では、プロファイル解析・グループID選択のテスト、iPhone用archive、両方の仮署名のApp Groups要求確認、IPA生成とArtifact保存が成功した。ソースは`2e82c2a`。取得したIPAのSHA-256は`c10c1a7138515ea967470bc8658dc8f832c23cf6fba93588fd95c35068ee37d8`で、ビルド側の記録と一致した。Windows上でも、本体・共有拡張のビルド番号3、表示名・起動スキーム・グループ要求を読み返した。AltServerでの再署名と実機連携は未検証。
+
+ビルド3の初回Workflow `38190810251`は、iPhone用IPA生成とSimulator用コンパイルまで成功したが、Simulatorの起動待ちが長時間完了せず、実行を停止した。生成済みIPAは保存できた。再実行ではIPAをSimulator確認より先に保存し、Simulator工程を5分で打ち切る構成にした。IPAはArtifact `iphone-share-probe`、Simulatorのログと取得できた画面は別の`iphone-share-probe-ui`へ保存する。
+
+再実行のSimulator工程も制限内に成功し、画面を取得・確認できた。表示名、要求ID・使用ID、署名診断の配置を確認した。Appleの署名・プロファイルなしで起動したため、App Groupsアクセスは失敗し、本体・拡張のプロファイルは見つからない表示だった。この結果で実機のグループ許可や共有連携が成功したとは扱わない。
+
 [ビルド 38140504618](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38140504618)は成功した。ソースは診断リポジトリの`6118443`。本体と共有拡張のiPhone用バイナリ、両方の仮署名に同じApp Groups要求があること、署名の整合性、IPA生成を確認した。生成IPAのSHA-256は`bb8c4d9a7e8bcfde11ee46b436f51cc1274c47f1f5060edfe8b317c005c04baa`。Windowsへダウンロード後も一致した。
 
 Simulator用のビルドと起動・スクリーンショット取得も成功した。Simulatorは`CODE_SIGNING_ALLOWED=NO`で起動しており、画面は「App Groups：確認失敗」だった。この実行で共有コンテナーの連携が成功したとは扱わない。その後、Sideloadlyでの再署名・iPhoneへのインストールと起動はユーザーが確認したが、本体のApp Groupsアクセスは失敗した。直接共有と修正後の本文は未検証。
