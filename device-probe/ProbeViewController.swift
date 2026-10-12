@@ -33,7 +33,7 @@ final class ProbeViewController: UIViewController {
       stack.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor, constant: -32)
     ])
 
-    stack.addArrangedSubview(label("他のアプリの共有シートで「共有テスト3」を選び、戻って結果を確認してください。これはBlueskyの投稿画面ではありません。"))
+    stack.addArrangedSubview(label("他のアプリの共有シートで「Share Probe 4」を選び、戻って結果を確認してください。これはBlueskyの投稿画面ではありません。"))
     groupStatus.numberOfLines = 0
     shareStatus.numberOfLines = 0
     stack.addArrangedSubview(groupStatus)

@@ -16,6 +16,8 @@ group = "group.org.sino87.clipboardprobe"
 def inspect(bundle):
     with (bundle / "Info.plist").open("rb") as handle:
         info = plistlib.load(handle)
+    if not info["CFBundleDisplayName"].isascii():
+        raise SystemExit(f"AltServer registration requires an ASCII app name: {bundle}")
     binary = bundle / info["CFBundleExecutable"]
     platform = subprocess.check_output(
         ["xcrun", "vtool", "-show-build", str(binary)], text=True
@@ -34,6 +36,8 @@ def inspect(bundle):
     print(platform)
     return {
         "bundle_id": info["CFBundleIdentifier"],
+        "display_name": info["CFBundleDisplayName"],
+        "build_version": info["CFBundleVersion"],
         "executable": info["CFBundleExecutable"],
         "requested_entitlements": entitlements,
     }
