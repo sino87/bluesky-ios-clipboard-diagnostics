@@ -34,6 +34,14 @@ Simulator用のビルドと起動・スクリーンショット取得も成功�
 
 無料署名は通常7日で期限切れになる。Sideloadlyが今回のApp Groupを無料署名できるかは未確認であり、インストールログと実際の画面で判定する。公式情報: [無料アカウントの制限](https://developer.apple.com/help/account/basics/about-your-developer-account/)、[App Groupsの対応表](https://developer.apple.com/help/account/reference/supported-capabilities-ios/)。
 
+### 実機でApp Groupsの確認が失敗した場合
+
+2026-10-12、ユーザーがSideloadlyで署名・インストールし、開発元の信頼設定とDeveloper Modeを有効にした後、実機でアプリを起動できた。一方、本体の画面は「App Groups：確認失敗」だった。インストールと起動まで進めたが、共有連携と修正後の本文は未検証。
+
+PCのSideloadlyキャッシュにはプロファイルのないIPAしか見つからず、インストール済みの署名情報はそこから確認できなかった。ビルド2に、本体と同梱共有拡張の`embedded.mobileprovision`からApp Groupsの宣言だけを表示する診断を追加した。CMS内のplistを読む処理で、署名・証明書の検証を代行しない。読み取れない場合は「権限なし」と扱わず、未判定として表示する。証明書、Apple Account、端末IDは表示しない。
+
+表示する「設定IDの許可」はプロファイル内の配列との一致判定で、コード署名や共有領域の実動作を保証しない。ここでApp Groupsがないのか、IDが異なるのかを確認し、実際の署名情報と照合する。診断を追加しただけで権限不足が解消するわけではない。同じIPAを繰り返しインストールする前に、この表示を確認する。
+
 ## iPhoneで確認する順序
 
 1. 「共有テスト」を一度開く。App Groupsが「本体から読み書き可能」になることを確認する。ここで失敗する場合は、まだ共有の修正判定へ進まない。
@@ -47,6 +55,14 @@ Simulator用のビルドと起動・スクリーンショット取得も成功�
 共有内容と招待URLは端末内の共有領域に保存される。アプリはネットワークへ送信しない。結果を共有する際は、招待コード・アカウント情報を伏せ、パスワード・確認コード・署名証明書は送らない。
 
 ## 失敗時に必要な情報
+
+### iCloudインストーラーがMedia Feature Packを要求する場合
+
+Media Feature Packは[Windows N版向け](https://support.microsoft.com/en-us/windows/experience/platform-variants/media-feature-pack-for-windows-n)で、通常のPro版へ追加する対象ではない。Appleは[Windows Media Playerがない場合にiCloudをインストールできない](https://support.apple.com/en-ie/102361)と案内している。
+
+2026-10-12のユーザーPCの読み取り確認では、EditionIDは`Professional`（N版ではない）、`MediaPlayback`と`WindowsMediaPlayer`はWMIの`InstallState = 2`（無効）だった。[WMIの公式定義](https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-optionalfeature)では2はDisabled、3がAbsentである。Media FoundationのDLLは存在していた。管理者権限が必要なDISMの詳細照会は実行できなかったため、コンポーネント修復が必要かまでは未確認。
+
+次に試す対象は「Windows Media Player 従来版」の追加・有効化。[Microsoftの手順](https://support.microsoft.com/en-us/windows/apps/windowsmediaplayer/troubleshoot-windows-media-player-errors?id=8163)では、Windows 11の設定 → システム → オプション機能 → 機能の追加から従来版を追加する。必要ならコントロールパネルの「Windowsの機能の有効化または無効化」でメディア機能を有効にする。この追加とiCloudの再インストールの成功は、まだ確認していない。
 
 - インストール失敗: Sideloadlyのエラー本文（Apple Account、端末ID、署名情報を伏せる）。
 - App Groups失敗: 本体または共有拡張の状態表示。インストールできただけで署名要件を満たしたとは判断しない。

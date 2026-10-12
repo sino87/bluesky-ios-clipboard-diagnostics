@@ -3,6 +3,7 @@ import UIKit
 final class ProbeViewController: UIViewController {
   private let groupStatus = UILabel()
   private let shareStatus = UILabel()
+  private let signingDetails = UILabel()
   private let composedText = UITextView()
   private let providerDetails = UITextView()
   private let clipboardDetails = UITextView()
@@ -37,6 +38,10 @@ final class ProbeViewController: UIViewController {
     shareStatus.numberOfLines = 0
     stack.addArrangedSubview(groupStatus)
     stack.addArrangedSubview(button("結果を更新", action: #selector(refresh)))
+    signingDetails.numberOfLines = 0
+    signingDetails.font = .preferredFont(forTextStyle: .footnote)
+    stack.addArrangedSubview(label("署名後のApp Groups許可（診断用）"))
+    stack.addArrangedSubview(signingDetails)
     stack.addArrangedSubview(shareStatus)
     stack.addArrangedSubview(label("修正済み共有処理が作った本文"))
     configure(composedText, height: 150, editable: false)
@@ -58,6 +63,11 @@ final class ProbeViewController: UIViewController {
 
   @objc func refresh() {
     guard isViewLoaded else { return }
+    let extensionURL = Bundle.main.bundleURL.appendingPathComponent("PlugIns/ClipboardProbeShare.appex")
+    signingDetails.text = [
+      ProfileDiagnostics.describe(bundleURL: Bundle.main.bundleURL, name: "本体", requestedGroup: ProbeStore.groupIdentifier),
+      ProfileDiagnostics.describe(bundleURL: extensionURL, name: "共有拡張", requestedGroup: ProbeStore.groupIdentifier)
+    ].joined(separator: "\n\n")
     do {
       let token = try ProbeStore.prepareHost()
       groupStatus.text = "App Groups：本体から読み書き可能\n\(ProbeStore.groupIdentifier)"

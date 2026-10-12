@@ -21,7 +21,7 @@ common_info = {
   'CFBundleInfoDictionaryVersion' => '6.0',
   'CFBundleName' => '$(PRODUCT_NAME)',
   'CFBundleShortVersionString' => '1.0',
-  'CFBundleVersion' => '1',
+  'CFBundleVersion' => '2',
   'CFBundleDisplayName' => '共有テスト',
   'MainAppScheme' => scheme_id,
   'ProbeAppGroup' => group_id,
@@ -65,7 +65,7 @@ embed = app.new_copy_files_build_phase('Embed App Extensions')
 embed.dst_subfolder_spec = '13'
 embed.add_file_reference(extension.product_reference).settings = { 'ATTRIBUTES' => ['RemoveHeadersOnCopy'] }
 
-%w[AppDelegate.swift ProbeViewController.swift ProbeStore.swift].each do |name|
+%w[AppDelegate.swift ProbeViewController.swift ProbeStore.swift ProfileDiagnostics.swift].each do |name|
   app.source_build_phase.add_file_reference(project.main_group.new_file("../../device-probe/#{name}"))
 end
 %w[DeviceShareViewController.swift ProbeStore.swift].each do |name|

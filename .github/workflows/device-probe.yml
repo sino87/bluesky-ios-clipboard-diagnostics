@@ -27,6 +27,23 @@ jobs:
           git -C upstream apply --check ../share-text-url.patch
           git -C upstream apply ../share-text-url.patch
           ruby device-probe/generate-project.rb upstream
+      - name: Check profile diagnostics parser
+        shell: bash
+        run: |
+          set -euo pipefail
+          probe_fixture=$(mktemp -d)
+          trap 'rm -rf "$probe_fixture"' EXIT
+          cat > "$probe_fixture/groups.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <plist version="1.0"><dict><key>Entitlements</key><dict><key>com.apple.security.application-groups</key><array><string>group.org.sino87.clipboardprobe</string></array></dict></dict></plist>
+          PLIST
+          openssl req -newkey rsa:2048 -nodes -x509 -days 1 -subj '/CN=ProbeFixture' \
+            -keyout "$probe_fixture/key.pem" -out "$probe_fixture/cert.pem" 2>/dev/null
+          openssl cms -sign -binary -nodetach -outform DER \
+            -in "$probe_fixture/groups.plist" -signer "$probe_fixture/cert.pem" \
+            -inkey "$probe_fixture/key.pem" -out "$probe_fixture/profile.cms"
+          swiftc device-probe/ProfileDiagnostics.swift device-probe/profile-tests/main.swift -o "$probe_fixture/check"
+          "$probe_fixture/check" "$probe_fixture/profile.cms"
       - name: Build unsigned iPhone archive
         shell: bash
         run: |
