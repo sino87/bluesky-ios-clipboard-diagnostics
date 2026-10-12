@@ -10,7 +10,7 @@ final class ProbeViewController: UIViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    title = "共有テスト"
+    title = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
     view.backgroundColor = .systemBackground
 
     let scroll = UIScrollView()
@@ -33,7 +33,7 @@ final class ProbeViewController: UIViewController {
       stack.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor, constant: -32)
     ])
 
-    stack.addArrangedSubview(label("他のアプリの共有シートで「共有テスト」を選び、戻って結果を確認してください。これはBlueskyの投稿画面ではありません。"))
+    stack.addArrangedSubview(label("他のアプリの共有シートで「共有テスト3」を選び、戻って結果を確認してください。これはBlueskyの投稿画面ではありません。"))
     groupStatus.numberOfLines = 0
     shareStatus.numberOfLines = 0
     stack.addArrangedSubview(groupStatus)
@@ -70,7 +70,7 @@ final class ProbeViewController: UIViewController {
     ].joined(separator: "\n\n")
     do {
       let token = try ProbeStore.prepareHost()
-      groupStatus.text = "App Groups：本体から読み書き可能\n\(ProbeStore.groupIdentifier)"
+      groupStatus.text = "App Groups：本体から読み書き可能\n使用ID：\(ProbeStore.groupIdentifier)"
       guard let record = try ProbeStore.load() else {
         shareStatus.text = "共有結果はまだありません。先にこの画面を開いた状態で、他のアプリから共有してください。"
         return
@@ -80,7 +80,7 @@ final class ProbeViewController: UIViewController {
       composedText.text = record.composeText ?? "本文を取得していません。下の受信データを確認してください。"
       providerDetails.text = String(data: try ProbeStore.encoded(record), encoding: .utf8)
     } catch {
-      groupStatus.text = "App Groups：確認失敗\n\(error.localizedDescription)\n設定ID：\(ProbeStore.groupIdentifier)"
+      groupStatus.text = "App Groups：確認失敗\n\(error.localizedDescription)\n要求ID：\(ProbeStore.requestedGroupIdentifier)\n使用ID：\(ProbeStore.groupIdentifier.isEmpty ? "該当する署名先IDなし" : ProbeStore.groupIdentifier)"
     }
   }
 

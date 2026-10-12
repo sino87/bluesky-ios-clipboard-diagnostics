@@ -10,9 +10,9 @@ raise 'Expected patched share controller' unless controller.include?('private fu
 
 bundle_id = 'org.sino87.clipboardprobe'
 group_id = "group.#{bundle_id}"
-scheme_id = 'sino87clipboardprobe'
+scheme_id = 'sino87clipboardprobe3'
 FileUtils.mkdir_p('generated/device-probe')
-File.write('generated/device-probe/ShareViewController.swift', controller.gsub('group.app.bsky', group_id))
+File.write('generated/device-probe/ShareViewController.swift', controller.gsub('"group.app.bsky"', 'ProbeStore.groupIdentifier'))
 
 common_info = {
   'CFBundleDevelopmentRegion' => 'en',
@@ -21,8 +21,8 @@ common_info = {
   'CFBundleInfoDictionaryVersion' => '6.0',
   'CFBundleName' => '$(PRODUCT_NAME)',
   'CFBundleShortVersionString' => '1.0',
-  'CFBundleVersion' => '2',
-  'CFBundleDisplayName' => '共有テスト',
+  'CFBundleVersion' => '3',
+  'CFBundleDisplayName' => '共有テスト3',
   'MainAppScheme' => scheme_id,
   'ProbeAppGroup' => group_id,
   'ProbeControllerSHA256' => Digest::SHA256.hexdigest(controller),

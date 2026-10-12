@@ -27,6 +27,13 @@ func profile(entitlements: [String: Any]) throws -> Data {
 }
 
 let group = "group.org.sino87.clipboardprobe"
+require(ProbeStore.assignedGroup(requested: group, assigned: nil) == group, "Native build uses its requested group")
+require(ProbeStore.assignedGroup(requested: group, assigned: []) == nil, "Empty signer mapping must not select a group")
+let assigned = group + ".FIXTURETEAM"
+require(ProbeStore.assignedGroup(requested: group, assigned: [assigned]) == assigned, "AltServer team suffix must be used")
+require(ProbeStore.assignedGroup(requested: group, assigned: ["group.unrelated", assigned]) == assigned, "Only the requested group namespace may be selected")
+require(ProbeStore.assignedGroup(requested: group, assigned: [group + "other.FIXTURETEAM"]) == nil, "Similar prefix must not match")
+require(ProbeStore.assignedGroup(requested: group, assigned: [group, assigned]) == nil, "Ambiguous mappings must be refused")
 let populated = try profile(entitlements: ["com.apple.security.application-groups": [group]])
 require(try ProfileDiagnostics.appGroups(in: populated) == [group], "App Group must be extracted from CMS content")
 require(try ProfileDiagnostics.appGroups(in: profile(entitlements: [:])).isEmpty, "Missing capability must be distinct from unreadable data")
@@ -40,4 +47,4 @@ if CommandLine.arguments.count > 1 {
   let genuineCMS = try Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[1]))
   require(try ProfileDiagnostics.appGroups(in: genuineCMS) == [group], "OpenSSL CMS content must decode")
 }
-print("Profile parser checks passed: present, absent, malformed, and CMS encoding")
+print("Profile and group mapping checks passed: present, absent, malformed, CMS encoding, and AltServer namespace mapping")

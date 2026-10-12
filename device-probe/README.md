@@ -1,6 +1,6 @@
 # iPhone実機用の共有検証アプリ
 
-この検証アプリは、修正済みBlueskyの共有コントローラーを実際のShare Extensionへ組み込み、送信元アプリの共有データと生成された本文を本体で表示する。Bluesky全体の実機テストや投稿成功を確認するアプリではない。
+この検証アプリは、修正済みBlueskyの共有コントローラーを実際のShare Extensionへ組み込み、送信元アプリの共有データと生成された本文を本体で表示する。Bluesky全体の実機テストや投稿成功を確認するアプリではない。ビルド3の表示名は「共有テスト3」。
 
 ## ビルド結果
 
@@ -13,10 +13,12 @@ Simulator用のビルドと起動・スクリーンショット取得も成功�
 - 本体: `org.sino87.clipboardprobe`
 - Share Extension: `org.sino87.clipboardprobe.share`
 - App Group: `group.org.sino87.clipboardprobe`
-- 起動スキーム: `sino87clipboardprobe`
+- ビルド3の起動スキーム: `sino87clipboardprobe3`（旧ビルドと区別する）
 - ソース: 公式 `46d98dd457a197cee8502863b420222508f29fa6` に `share-text-url.patch` を適用する。
 
-本体と共有拡張は同じApp Groupを要求する。共有コントローラーのグループIDだけをテスト用に置き換え、投稿本文の処理はそのまま使用する。拡張のラッパーは同じ実際のproviderを先に読み、入力とcomposeリンクを共有領域へ記録する。この観察用の追加読み込み・保存と、Blueskyを含まない本体は検証構成特有の差分であり、フルアプリとの同等性は保証しない。
+本体と共有拡張は同じApp Groupを要求する。共有コントローラーのグループ参照だけを検証アプリの`ProbeStore.groupIdentifier`へ置き換え、投稿本文の処理はそのまま使用する。AltServerが書く`ALTAppGroups`がある場合は、要求IDと同じか、要求ID＋ドットで始まる署名先IDが一つだけ一致したときに使う。一致なし・複数一致は拒否する。これにより署名ツールが付けるチームIDを本体・共有拡張ともに使用できる。メタデータのない生成直後のビルドは要求IDを使う。グループがOSから許可されるかは実際の読み書きで判定する。
+
+拡張のラッパーは同じ実際のproviderを先に読み、入力とcomposeリンクを共有領域へ記録する。この観察用の追加読み込み・保存と、Blueskyを含まない本体は検証構成特有の差分であり、フルアプリとの同等性は保証しない。
 
 デバイス用の未署名archiveを作った後、本体と拡張へApp Groupsの要求を含むローカルの仮署名（ad-hoc signature）を付ける。署名ツールへ必要な権限を伝えるためで、Appleの証明書・プロファイルは使わない。この状態でiPhoneへインストールできることを意味せず、SideloadlyによるApple Accountでの再署名と権限の許可が必要。生成時に両方の仮署名のEntitlementsを読み返して確認する。
 
@@ -43,6 +45,19 @@ PCのSideloadlyキャッシュにはプロファイルのないIPAしか見つ�
 診断ビルド2の[Workflow 38189236939](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38189236939)は成功した。ソースは`54a8559`。App Groupsあり・なし・不正データと、OpenSSLで生成したCMSのパーサー検証、iPhone用archive、仮署名内のグループ要求、Simulator起動と追加表示を確認した。ダウンロードしたIPAのSHA-256は`c78d4d26e98f75de8fc0c16fc698c5d2c24d9a49fb25d9d28bc3cbc6dad56add`で、クラウド側の記録と一致する。再署名後の実機プロファイルの表示と共有コンテナーの成功は未確認。同じApple AccountとBundle IDで既存の検証アプリへ上書きし、「署名後のApp Groups許可」を確認する。
 
 表示する「設定IDの許可」はプロファイル内の配列との一致判定で、コード署名や共有領域の実動作を保証しない。ここでApp Groupsがないのか、IDが異なるのかを確認し、実際の署名情報と照合する。診断を追加しただけで権限不足が解消するわけではない。同じIPAを繰り返しインストールする前に、この表示を確認する。
+
+追加の実機画面で、本体のプロファイルには「App Groupsなし」「設定IDの許可なし」と表示された。拡張のプロファイルは見つからず未判定だった。したがって、現在のSideloadly署名では少なくとも本体が要求するグループが許可されていない。無料Apple Account一般の不可能性や、拡張自体の削除まではこの画面から断定しない。
+
+## AltStore Classicによる次の署名候補
+
+[Windows版AltServerのソース](https://github.com/rileytestut/AltServer-Windows/blob/41fb42bc78056f59e64566f7561ba405ef59b5d9/AltServer/AltServerApp.cpp)では、本体と各拡張について、App Groupsを有効化・登録・割り当てた後にプロファイルを取得する処理を確認した。グループIDへチームIDを付け、署名時に各Info.plistの`ALTAppGroups`へ割り当て後のIDを記録する。ビルド3はこのメタデータに対応する。今回の端末・アカウントでの署名成功は未検証。
+
+1. [公式Windows手順](https://faq.altstore.io/altstore-classic/how-to-install-altstore-windows)からAltServerを導入する。既に導入したWeb版iTunesとiCloudを使う。対象はAltStore Classicで、地域限定の別配布方式ではない。
+2. 同じApple Accountと接続済みiPhoneを使い、公式手順でAltStoreをiPhoneへインストールする。
+3. 更新したビルド3のIPAをiPhoneへ転送し、AltStoreから読み込む。共有拡張を含む構成を保持する。
+4. 「共有テスト3」を開き、本体のApp Groups読み書きと、本体・拡張それぞれのプロファイル表示を確認する。
+
+AltStore側でBundle IDが変わる可能性があるため、旧Sideloadly版と区別する表示名・起動スキームを使用する。確認した公開コードの`FetchCertificate`には、新規証明書を準備する際に既存の開発証明書を取り消して再試行する経路がある。これにより、取り消した証明書で署名されたSideloadlyのアプリなどが起動できなくなる可能性がある。AltServerでのApple Account認証・署名は、この影響を説明してユーザーの確認を得るまで実行しない。こちらではアプリ削除・証明書取り消し・AltServer導入・Apple Account認証を行っていない。
 
 ## iPhoneで確認する順序
 

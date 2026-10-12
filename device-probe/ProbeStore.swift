@@ -24,12 +24,27 @@ struct ShareRecord: Codable {
 }
 
 enum ProbeStore {
-  static var groupIdentifier: String {
+  static var requestedGroupIdentifier: String {
     Bundle.main.object(forInfoDictionaryKey: "ProbeAppGroup") as? String ?? ""
   }
 
+  static var groupIdentifier: String {
+    assignedGroup(
+      requested: requestedGroupIdentifier,
+      assigned: Bundle.main.object(forInfoDictionaryKey: "ALTAppGroups") as? [String]
+    ) ?? ""
+  }
+
+  static func assignedGroup(requested: String, assigned: [String]?) -> String? {
+    guard !requested.isEmpty else { return nil }
+    guard let assigned else { return requested }
+    let matching = assigned.filter { $0 == requested || $0.hasPrefix(requested + ".") }
+    return matching.count == 1 ? matching[0] : nil
+  }
+
   static var directory: URL? {
-    FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier)
+    guard !groupIdentifier.isEmpty else { return nil }
+    return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier)
   }
 
   static func hostToken() -> String? {

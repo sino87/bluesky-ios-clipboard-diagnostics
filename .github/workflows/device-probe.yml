@@ -42,7 +42,7 @@ jobs:
           openssl cms -sign -binary -nodetach -outform DER \
             -in "$probe_fixture/groups.plist" -signer "$probe_fixture/cert.pem" \
             -inkey "$probe_fixture/key.pem" -out "$probe_fixture/profile.cms"
-          swiftc device-probe/ProfileDiagnostics.swift device-probe/profile-tests/main.swift -o "$probe_fixture/check"
+          swiftc device-probe/ProfileDiagnostics.swift device-probe/ProbeStore.swift device-probe/profile-tests/main.swift -o "$probe_fixture/check"
           "$probe_fixture/check" "$probe_fixture/profile.cms"
       - name: Build unsigned iPhone archive
         shell: bash
