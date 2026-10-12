@@ -2,7 +2,7 @@
 
 公式アプリのReact Native投稿画面と依存ライブラリを含む検証用IPAを、専用リポジトリでビルドする。Share Probeとは別のアプリであり、Share Extension・App Groups・画像/動画の共有経路を残す。
 
-2026-10-12、[修正版のビルドとIPA検査](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38199595875)が成功した。無料署名したIPAをiPhoneで起動し、実際の投稿画面に本文とURLが1回ずつ表示され、リンクプレビューが生成されることを確認した。[検証記録](build-validation.md)を参照。画像・動画の共有、通常ペースト、投稿送信は未確認。
+2026-10-12、[修正版のビルドとIPA検査](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38199595875)が成功した。無料署名したIPAをiPhoneで起動し、実際の投稿画面に本文とURLが1回ずつ表示され、リンクプレビューが生成されることを確認した。写真アプリからの画像1枚の共有も、利用者が添付成功を報告した。[検証記録](build-validation.md)を参照。複数画像・動画の共有、通常ペースト、投稿送信は未確認。
 
 ## ビルド構成
 
@@ -15,7 +15,7 @@
 
 無料アカウントの機能制約に合わせ、Push通知、App Clip、関連ドメインによる起動、通知のコミュニケーション機能、追加メモリー権限を検証対象から外す。年齢範囲の権限とOTA更新も含めない。年齢確認など、これらの機能に依存する画面の検証には使用できない。
 
-[Appleの対応機能表](https://developer.apple.com/help/account/reference/supported-capabilities-ios/)では、無料アカウントでもApp Groupsを利用できる。既存のShare ProbeではAltServer署名後の共有コンテナー連携に成功した。本体IPAの本文＋URL共有にも成功したが、App Groupsを使うメディア転送は別途確認が必要。
+[Appleの対応機能表](https://developer.apple.com/help/account/reference/supported-capabilities-ios/)では、無料アカウントでもApp Groupsを利用できる。既存のShare ProbeではAltServer署名後の共有コンテナー連携に成功した。本体IPAでも、App Groupsを使う画像1枚の転送に成功したとの利用者報告を得た。
 
 検証用の変更は使い捨ての `upstream` checkoutにのみ適用する。公式リポジトリ向けの修正差分には、これらのビルド設定を含めない。
 
