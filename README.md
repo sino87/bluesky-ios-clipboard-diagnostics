@@ -1,6 +1,6 @@
 # iOS共有・ペーストの診断用テスト
 
-状態: **修正版は19件のXCTestに成功。無料署名したBluesky本体の検証版でも、実機の共有シートから本文とURLを投稿画面へ渡すことに成功。写真アプリからの画像1枚も添付成功の報告あり。複数画像・動画と通常ペーストは確認待ち。**
+状態: **修正版は19件のXCTestに成功。無料署名したBluesky本体の検証版でも、実機の共有シートから本文とURLを投稿画面へ渡すことに成功。画像1枚の共有と通常ペーストも成功報告あり。通常ペーストには修正を加えておらず、公式アプリとの比較は確認待ち。**
 
 [最終修正版の18ケース](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123423399/job/114422690014)と[Lint・iOS/Android/WebのTypeScriptチェック](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123425316/job/114422695781)が成功した。ネイティブLintは元コードにもある25件のSwiftLint違反（12 errors）で失敗し、修正前後で同じ診断だった。ktlintは未実行。これらのCIチェックと、後述の実機検証は別の結果として扱う。
 
@@ -10,7 +10,7 @@ Blueskyの修正PRに含めず、専用の公開検証リポジトリで使う�
 
 ## Bluesky本体の検証用IPA
 
-[本体のビルド構成と実機テスト手順](bluesky-build/README.md)を用意した。公式アプリとは別のIDで、実際の投稿画面・通常ペースト・Share Extension・App Groupsを残して確認する。[本体IPAの実機検証記録](bluesky-build/build-validation.md)では、本文＋URLの共有とリンクプレビュー、および画像1枚の添付成功報告を記録した。複数画像・動画の転送と通常ペーストは未確認。
+[本体のビルド構成と実機テスト手順](bluesky-build/README.md)を用意した。公式アプリとは別のIDで、実際の投稿画面・通常ペースト・Share Extension・App Groupsを残して確認する。[本体IPAの実機検証記録](bluesky-build/build-validation.md)では、本文＋URLの共有とリンクプレビュー、画像1枚の共有、および通常ペーストの成功報告を記録した。複数画像・動画の転送と、公式アプリでの同一クリップボードによる比較は未確認。
 
 ## iPhone実機用の検証アプリ
 

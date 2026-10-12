@@ -2,7 +2,7 @@
 
 公式アプリのReact Native投稿画面と依存ライブラリを含む検証用IPAを、専用リポジトリでビルドする。Share Probeとは別のアプリであり、Share Extension・App Groups・画像/動画の共有経路を残す。
 
-2026-10-12、[修正版のビルドとIPA検査](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38199595875)が成功した。無料署名したIPAをiPhoneで起動し、実際の投稿画面に本文とURLが1回ずつ表示され、リンクプレビューが生成されることを確認した。写真アプリからの画像1枚の共有も、利用者が添付成功を報告した。[検証記録](build-validation.md)を参照。複数画像・動画の共有、通常ペースト、投稿送信は未確認。
+2026-10-12、[修正版のビルドとIPA検査](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38199595875)が成功した。無料署名したIPAをiPhoneで起動し、実際の投稿画面に本文とURLが1回ずつ表示され、リンクプレビューが生成されることを確認した。画像1枚の共有と通常ペーストでの本文＋URL挿入も、利用者が成功を報告した。ペースト処理には修正を加えていない。[検証記録](build-validation.md)を参照。公式アプリとの同一クリップボードでの比較、複数画像・動画の共有、投稿送信は未確認。
 
 ## ビルド構成
 
