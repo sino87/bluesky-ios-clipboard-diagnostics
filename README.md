@@ -1,10 +1,16 @@
 # iOS共有・ペーストの診断用テスト
 
-状態: **Xcode 26.6 / iOS 26.4.1 Simulatorで共有の別添付・別アイテムの欠落を再現。最終修正差分は18件のXCTestにすべて成功。**
+状態: **Xcode 26.6 / iOS Simulatorで修正版は19件のXCTestに成功。独立したShare Probeでは、実機の共有拡張から本文とURLを取得し、本体へ戻るところまで成功。Bluesky本体での検証はこれから。**
 
 [最終修正版の18ケース](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123423399/job/114422690014)と[Lint・iOS/Android/WebのTypeScriptチェック](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123425316/job/114422695781)が成功した。ネイティブLintは元コードにもある25件のSwiftLint違反（12 errors）で失敗し、修正前後で同じ診断だった。ktlintは未実行。実機TVer、普通のBluesky投稿欄でのペースト、署名・インストールの成功は示していない。
 
+[最新の19ケース](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38195607360/job/114637433883)と[Share Probeの実機検証記録](device-probe/device-validation.md)を参照。上記18ケースのリンクは前回の検証結果。
+
 Blueskyの修正PRに含めず、専用の公開検証リポジトリで使う。SimulatorテストとクラウドビルドにはApple Account、署名証明書、Blueskyのログインは不要。Workflowは手動実行だけで、GitHubへの作成・Push・実行はユーザーの確認後に行う。
+
+## Bluesky本体の検証用IPA
+
+[本体のビルド構成と実機テスト手順](bluesky-build/README.md)を用意した。公式アプリとは別のIDで、実際の投稿画面・通常ペースト・Share Extension・App Groupsを残して確認する。構成を用意した段階で、IPAビルドと実機テストは未確認。
 
 ## iPhone実機用の検証アプリ
 
