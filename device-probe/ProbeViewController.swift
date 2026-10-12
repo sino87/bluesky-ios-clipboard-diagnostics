@@ -33,14 +33,14 @@ final class ProbeViewController: UIViewController {
       stack.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor, constant: -32)
     ])
 
-    stack.addArrangedSubview(label("他のアプリの共有シートで「Share Probe 4」を選び、戻って結果を確認してください。これはBlueskyの投稿画面ではありません。"))
+    stack.addArrangedSubview(label("他のアプリの共有シートで「Share Probe 5」を選び、戻って結果を確認してください。これはBlueskyの投稿画面ではありません。"))
     groupStatus.numberOfLines = 0
     shareStatus.numberOfLines = 0
     stack.addArrangedSubview(groupStatus)
     stack.addArrangedSubview(button("結果を更新", action: #selector(refresh)))
     signingDetails.numberOfLines = 0
     signingDetails.font = .preferredFont(forTextStyle: .footnote)
-    stack.addArrangedSubview(label("署名後のApp Groups許可（診断用）"))
+    stack.addArrangedSubview(label("署名後のApp Groups宣言（診断用）"))
     stack.addArrangedSubview(signingDetails)
     stack.addArrangedSubview(shareStatus)
     stack.addArrangedSubview(label("修正済み共有処理が作った本文"))
@@ -66,7 +66,9 @@ final class ProbeViewController: UIViewController {
     let extensionURL = Bundle.main.bundleURL.appendingPathComponent("PlugIns/ClipboardProbeShare.appex")
     signingDetails.text = [
       ProfileDiagnostics.describe(bundleURL: Bundle.main.bundleURL, name: "本体", requestedGroup: ProbeStore.groupIdentifier),
-      ProfileDiagnostics.describe(bundleURL: extensionURL, name: "共有拡張", requestedGroup: ProbeStore.groupIdentifier)
+      ProfileDiagnostics.describe(bundleURL: extensionURL, name: "共有拡張", requestedGroup: ProbeStore.groupIdentifier),
+      SignatureDiagnostics.describe(bundleURL: Bundle.main.bundleURL, name: "本体", requestedGroup: ProbeStore.groupIdentifier),
+      SignatureDiagnostics.describe(bundleURL: extensionURL, name: "共有拡張", requestedGroup: ProbeStore.groupIdentifier)
     ].joined(separator: "\n\n")
     do {
       let token = try ProbeStore.prepareHost()

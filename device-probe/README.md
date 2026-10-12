@@ -1,6 +1,6 @@
 # iPhone実機用の共有検証アプリ
 
-この検証アプリは、修正済みBlueskyの共有コントローラーを実際のShare Extensionへ組み込み、送信元アプリの共有データと生成された本文を本体で表示する。Bluesky全体の実機テストや投稿成功を確認するアプリではない。現在のビルド4の表示名は「Share Probe 4」。
+この検証アプリは、修正済みBlueskyの共有コントローラーを実際のShare Extensionへ組み込み、送信元アプリの共有データと生成された本文を本体で表示する。Bluesky全体の実機テストや投稿成功を確認するアプリではない。現在のビルド5の表示名は「Share Probe 5」。
 
 ## ビルド結果
 
@@ -21,7 +21,7 @@ Simulator用のビルドと起動・スクリーンショット取得も成功�
 - 本体: `org.sino87.clipboardprobe`
 - Share Extension: `org.sino87.clipboardprobe.share`
 - App Group: `group.org.sino87.clipboardprobe`
-- ビルド4の起動スキーム: `sino87clipboardprobe4`（旧ビルドと区別する）
+- ビルド5の起動スキーム: `sino87clipboardprobe5`（旧ビルドと区別する）
 - ソース: 公式 `46d98dd457a197cee8502863b420222508f29fa6` に `share-text-url.patch` を適用する。
 
 本体と共有拡張は同じApp Groupを要求する。共有コントローラーのグループ参照だけを検証アプリの`ProbeStore.groupIdentifier`へ置き換え、投稿本文の処理はそのまま使用する。AltServerが書く`ALTAppGroups`がある場合は、要求IDと同じか、要求ID＋ドットで始まる署名先IDが一つだけ一致したときに使う。一致なし・複数一致は拒否する。これにより署名ツールが付けるチームIDを本体・共有拡張ともに使用できる。メタデータのない生成直後のビルドは要求IDを使う。グループがOSから許可されるかは実際の読み書きで判定する。
@@ -62,17 +62,23 @@ PCのSideloadlyキャッシュにはプロファイルのないIPAしか見つ�
 
 1. [公式Windows手順](https://faq.altstore.io/altstore-classic/how-to-install-altstore-windows)からAltServerを導入する。既に導入したWeb版iTunesとiCloudを使う。対象はAltStore Classicで、地域限定の別配布方式ではない。
 2. 承認後、iPhoneをUSB接続し、Shiftキーを押しながらWindowsの通知領域にあるAltServerアイコンをクリックする。
-3. 「Sideload .ipa」からiPhoneを選び、Windowsにあるビルド4のIPAを選択する。認証はAltServerの画面で行い、共有拡張を含む構成を保持する。この直接インストール機能は[公式リリースノート](https://faq.altstore.io/release-notes/altserver)と公開Windowsコードで確認した。iPhoneにAltStoreアプリを先に追加する必要はない。
-4. 「Share Probe 4」を開き、本体のApp Groups読み書きと、本体・拡張それぞれのプロファイル表示を確認する。
+3. 「Sideload .ipa」からiPhoneを選び、Windowsにあるビルド5のIPAを選択する。認証はAltServerの画面で行い、共有拡張を含む構成を保持する。この直接インストール機能は[公式リリースノート](https://faq.altstore.io/release-notes/altserver)と公開Windowsコードで確認した。iPhoneにAltStoreアプリを先に追加する必要はない。
+4. 「Share Probe 5」を開き、本体のApp Groups読み書きと、本体・拡張それぞれのプロファイル・コード署名XML表示を確認する。
 
 AltStore側でBundle IDが変わる可能性があるため、旧Sideloadly版と区別する表示名・起動スキームを使用する。確認した公開コードの`FetchCertificate`には、新規証明書を準備する際に既存の開発証明書を取り消して再試行する経路がある。これにより、取り消した証明書で署名されたSideloadlyのアプリなどが起動できなくなる可能性がある。AltServerでのApple Account認証・署名は、この影響を説明してユーザーの確認を得るまで実行しない。こちらではアプリ削除・証明書取り消し・AltServer導入・Apple Account認証を行っていない。
 
 ユーザーは証明書への影響を了承してAltServerでの署名を試したが、ビルド3では「The name for this app is invalid.」と表示された。[公式FAQの3009](https://faq.altstore.io/altstore-classic/error-codes)は、非ASCIIのアプリ名によるApp ID登録失敗と説明している。ビルド3の本体・拡張ともに`CFBundleDisplayName`が「共有テスト3」だったため、ビルド4では両方をASCIIの「Share Probe 4」に変更した。共有処理、グループID、Bundle ID、拡張の有効化条件は同じ。今回の登録エラーが解消するかは実機で再試行して確認する。
 
+ビルド4はAltServerでインストール・起動でき、本体のApp Groups読み書きが成功した。本体から読んだ本体・拡張のプロファイルには、同じチーム接尾辞付きグループの許可があった。しかし他のアプリから共有すると、実行中の拡張では`containerURL`がnilとなり、受信記録の保存前に停止した。プロファイルの宣言が揃うことだけでは、拡張の実際のアクセス成功を保証しない。修正済み共有コントローラーを呼ぶ前の診断用保存で止まったため、投稿本文の実機検証はまだ完了していない。
+
+ビルド5は、本体・拡張のMach-Oコード署名にあるXMLのApp Groups宣言と、DER宣言ブロックの有無を表示する。拡張が失敗した画面でも、実行中の拡張自身のビルド番号・Bundle ID・プロファイル・署名XMLを表示する。形式を読めない場合は未判定とし、権限なしとは扱わない。診断は[AppleのMach-O定義](https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/loader.h)と[署名形式](https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/kern/cs_blobs.h)に従って宣言を読むだけで、証明書・署名ハッシュの検証やOSの実効権限の照会はしない。DERの値は解析せず、その有無をXMLと区別して表示する。
+
+ビルド4で記録された共有の添付は`public.url`の1件だけだったが、共有アイテム本体の本文・タイトルは未記録だった。ビルド5では`attributedContentText`・`attributedTitle`とuserInfoのキー一覧も記録する。添付に本文がないことだけで、送信元が本文を渡していないとは断定しない。通常ペーストのクリップボード構成とも別の観測である。
+
 ## iPhoneで確認する順序
 
-1. ビルド4では「Share Probe 4」を一度開く。App Groupsが「本体から読み書き可能」になることを確認する。ここで失敗する場合は、まだ共有の修正判定へ進まない。
-2. 送信元アプリの共有シートで「Share Probe 4」を選ぶ。見えない場合は共有先一覧の編集から探す。
+1. ビルド5では「Share Probe 5」を一度開く。App Groupsが「本体から読み書き可能」になることを確認する。ここで失敗する場合は、まだ共有の修正判定へ進まない。
+2. 送信元アプリの共有シートで「Share Probe 5」を選ぶ。見えない場合は共有先一覧の編集から探す。
 3. 本体へ戻り、必要なら「結果を更新」を押す。
 4. 「本体 → 拡張 → 本体の連携成功」と「composeリンク取得済み」を確認する。
 5. 「修正済み共有処理が作った本文」に元の本文とURLが両方あるか、URLが重複していないかを確認する。

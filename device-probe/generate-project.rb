@@ -10,7 +10,7 @@ raise 'Expected patched share controller' unless controller.include?('private fu
 
 bundle_id = 'org.sino87.clipboardprobe'
 group_id = "group.#{bundle_id}"
-scheme_id = 'sino87clipboardprobe4'
+scheme_id = 'sino87clipboardprobe5'
 FileUtils.mkdir_p('generated/device-probe')
 File.write('generated/device-probe/ShareViewController.swift', controller.gsub('"group.app.bsky"', 'ProbeStore.groupIdentifier'))
 
@@ -21,8 +21,8 @@ common_info = {
   'CFBundleInfoDictionaryVersion' => '6.0',
   'CFBundleName' => '$(PRODUCT_NAME)',
   'CFBundleShortVersionString' => '1.0',
-  'CFBundleVersion' => '4',
-  'CFBundleDisplayName' => 'Share Probe 4',
+  'CFBundleVersion' => '5',
+  'CFBundleDisplayName' => 'Share Probe 5',
   'MainAppScheme' => scheme_id,
   'ProbeAppGroup' => group_id,
   'ProbeControllerSHA256' => Digest::SHA256.hexdigest(controller),
@@ -65,10 +65,10 @@ embed = app.new_copy_files_build_phase('Embed App Extensions')
 embed.dst_subfolder_spec = '13'
 embed.add_file_reference(extension.product_reference).settings = { 'ATTRIBUTES' => ['RemoveHeadersOnCopy'] }
 
-%w[AppDelegate.swift ProbeViewController.swift ProbeStore.swift ProfileDiagnostics.swift].each do |name|
+%w[AppDelegate.swift ProbeViewController.swift ProbeStore.swift ProfileDiagnostics.swift SignatureDiagnostics.swift].each do |name|
   app.source_build_phase.add_file_reference(project.main_group.new_file("../../device-probe/#{name}"))
 end
-%w[DeviceShareViewController.swift ProbeStore.swift].each do |name|
+%w[DeviceShareViewController.swift ProbeStore.swift ProfileDiagnostics.swift SignatureDiagnostics.swift].each do |name|
   extension.source_build_phase.add_file_reference(project.main_group.new_file("../../device-probe/#{name}"))
 end
 extension.source_build_phase.add_file_reference(project.main_group.new_file('ShareViewController.swift'))

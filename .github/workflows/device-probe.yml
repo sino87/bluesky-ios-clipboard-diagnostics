@@ -63,6 +63,10 @@ jobs:
             --entitlements generated/device-probe/Probe.entitlements "$app/PlugIns/ClipboardProbeShare.appex"
           codesign --force --sign - --generate-entitlement-der \
             --entitlements generated/device-probe/Probe.entitlements "$app"
+          swiftc device-probe/SignatureDiagnostics.swift device-probe/signature-tests/main.swift \
+            -o generated/device-probe/check-signature
+          generated/device-probe/check-signature "$app/ClipboardDeviceProbe" \
+            "$app/PlugIns/ClipboardProbeShare.appex/ClipboardProbeShare"
           python3 device-probe/package-ipa.py generated/device-probe/ClipboardDeviceProbe.xcarchive results/device-probe
           cp generated/device-probe/Probe.entitlements results/device-probe/requested-entitlements.plist
       - name: Preserve IPA, build evidence, and setup guide

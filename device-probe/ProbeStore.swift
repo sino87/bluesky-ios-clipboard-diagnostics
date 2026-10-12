@@ -14,9 +14,17 @@ struct ProviderRecord: Codable {
   let url: ProviderValue?
 }
 
+struct ItemRecord: Codable {
+  let itemIndex: Int
+  let title: String?
+  let contentText: String?
+  let userInfoKeys: [String]
+}
+
 struct ShareRecord: Codable {
   let receivedAt: Date
   let hostToken: String?
+  let items: [ItemRecord]
   let providers: [ProviderRecord]
   var composeURL: String?
   var composeText: String?

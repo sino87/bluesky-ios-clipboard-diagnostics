@@ -33,9 +33,16 @@ final class DeviceShareViewController: ShareViewController {
     guard !started else { return }
     started = true
     Task { @MainActor in
+      var items: [ItemRecord] = []
       var providers: [ProviderRecord] = []
       for (itemIndex, input) in (extensionContext?.inputItems ?? []).enumerated() {
         guard let item = input as? NSExtensionItem else { continue }
+        items.append(ItemRecord(
+          itemIndex: itemIndex,
+          title: item.attributedTitle?.string,
+          contentText: item.attributedContentText?.string,
+          userInfoKeys: (item.userInfo?.keys.map { String(describing: $0) } ?? []).sorted()
+        ))
         for (attachmentIndex, provider) in (item.attachments ?? []).enumerated() {
           let text = await loadedValue(provider, identifier: "public.text")
           let url = await loadedValue(provider, identifier: "public.url")
@@ -48,14 +55,18 @@ final class DeviceShareViewController: ShareViewController {
           ))
         }
       }
-      let record = ShareRecord(receivedAt: Date(), hostToken: ProbeStore.hostToken(), providers: providers)
+      let record = ShareRecord(receivedAt: Date(), hostToken: ProbeStore.hostToken(), items: items, providers: providers)
       self.record = record
       do {
         try ProbeStore.save(record)
         runSharedController(animated)
       } catch {
         let payload = (try? ProbeStore.encoded(record)).flatMap { String(data: $0, encoding: .utf8) } ?? ""
-        details.text = "App Groups：確認失敗\n\(error.localizedDescription)\n設定ID：\(ProbeStore.groupIdentifier)\n\n受信データ：\n\(payload)"
+        let bundle = Bundle.main
+        let version = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "不明"
+        let profile = ProfileDiagnostics.describe(bundleURL: bundle.bundleURL, name: "実行中の共有拡張", requestedGroup: ProbeStore.groupIdentifier)
+        let signature = SignatureDiagnostics.describe(bundleURL: bundle.bundleURL, name: "実行中の共有拡張", requestedGroup: ProbeStore.groupIdentifier)
+        details.text = "App Groups：確認失敗\n\(error.localizedDescription)\n設定ID：\(ProbeStore.groupIdentifier)\n実行中：\(bundle.bundleIdentifier ?? "不明")（ビルド\(version)）\n\n\(profile)\n\n\(signature)\n\n受信データ：\n\(payload)"
       }
     }
   }
