@@ -55,6 +55,17 @@ final class ClipboardDiagnosticsTests: XCTestCase {
   }
 
   @MainActor
+  func testSharePlainTextAndURLWithContentMetadata() async {
+    let caption = "A shared caption\nJoin code: EXAMPLE"
+    let url = URL(string: "https://example.com/invite")!
+    let plainText = NSItemProvider(item: caption as NSString, typeIdentifier: UTType.plainText.identifier)
+    let item = extensionItem([plainText, urlProvider(url)])
+    item.attributedContentText = NSAttributedString(string: caption)
+    let text = await share([item])
+    XCTAssertEqual(text, "\(caption) \(url.absoluteString)")
+  }
+
+  @MainActor
   func testShareSeparateExtensionItems() async {
     let text = await share([
       extensionItem([textProvider(title)]),
