@@ -1,6 +1,6 @@
 # iOS共有・ペーストの診断用テスト
 
-状態: **修正版は19件のXCTestに成功。無料署名したBluesky本体の検証版でも、実機の共有シートから本文とURLを投稿画面へ渡すことに成功。画像1枚の共有も成功報告あり。通常ペーストは同じクリップボードで両アプリとも成功し、今回の条件では欠落を再現していない。**
+状態: **修正版は19件のXCTestに成功。実機の同じ共有元による比較で、公式BlueskyはURLが欠落し、修正版は本文とURLを保持。画像1枚の共有も成功報告あり。通常ペーストは同じクリップボードで両アプリとも成功し、今回の条件では欠落を再現していない。**
 
 [最終修正版の18ケース](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123423399/job/114422690014)と[Lint・iOS/Android/WebのTypeScriptチェック](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123425316/job/114422695781)が成功した。ネイティブLintは元コードにもある25件のSwiftLint違反（12 errors）で失敗し、修正前後で同じ診断だった。ktlintは未実行。これらのCIチェックと、後述の実機検証は別の結果として扱う。
 
