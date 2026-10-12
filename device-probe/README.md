@@ -4,6 +4,8 @@
 
 ## ビルド結果
 
+[ビルド5のWorkflow 38194298427](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38194298427)で、プロファイル・ID選択テスト、iPhone用archive、署名解析テスト、ASCII名と両署名のApp Groups要求の確認、IPA保存が成功した。ソース`01c48b5`。署名解析は宣言あり・なし、XMLなし、破損データと、生成した本体・拡張の両実バイナリで確認した。Windowsへ取得したIPAのSHA-256は`21d9771350f2ba00253a661cb028dd3c4d187a5cc20626e480fd1c058a5a9374`で一致し、両方の表示名・ビルド番号5・グループ要求も確認した。これは生成時の仮署名の検証で、AltServerによる再署名後の宣言と実機連携は未確認。Simulatorの追加確認より先にIPAを保存するため、Workflow全体の結果とは区別する。
+
 [ビルド4のWorkflow 38192887324](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38192887324)で、プロファイル・ID選択テスト、iPhone用archive、ASCII名と両署名のApp Groups要求の確認、IPA保存が成功した。ソース`3130ad1`。Windowsへ取得したIPAのSHA-256は`85e37a75d653904d63a289649267341301c3e71e3f0237e5028ef565a534670a`で一致。本体と共有拡張の表示名「Share Probe 4」、ビルド番号4、起動スキーム、グループ要求も読み返した。実機の登録エラー解消とApp Groups連携は未検証。IPAはSimulatorの追加確認に先立って保存するため、IPA生成の成功とWorkflow全体の結果を区別する。
 
 [ビルド3のWorkflow 38191563307](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38191563307)では、プロファイル解析・グループID選択のテスト、iPhone用archive、両方の仮署名のApp Groups要求確認、IPA生成とArtifact保存が成功した。ソースは`2e82c2a`。取得したIPAのSHA-256は`c10c1a7138515ea967470bc8658dc8f832c23cf6fba93588fd95c35068ee37d8`で、ビルド側の記録と一致した。Windows上でも、本体・共有拡張のビルド番号3、表示名・起動スキーム・グループ要求を読み返した。AltServerでの再署名と実機連携は未検証。
