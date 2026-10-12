@@ -4,6 +4,8 @@
 
 ## ビルド結果
 
+[ビルド4のWorkflow 38192887324](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38192887324)で、プロファイル・ID選択テスト、iPhone用archive、ASCII名と両署名のApp Groups要求の確認、IPA保存が成功した。ソース`3130ad1`。Windowsへ取得したIPAのSHA-256は`85e37a75d653904d63a289649267341301c3e71e3f0237e5028ef565a534670a`で一致。本体と共有拡張の表示名「Share Probe 4」、ビルド番号4、起動スキーム、グループ要求も読み返した。実機の登録エラー解消とApp Groups連携は未検証。IPAはSimulatorの追加確認に先立って保存するため、IPA生成の成功とWorkflow全体の結果を区別する。
+
 [ビルド3のWorkflow 38191563307](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38191563307)では、プロファイル解析・グループID選択のテスト、iPhone用archive、両方の仮署名のApp Groups要求確認、IPA生成とArtifact保存が成功した。ソースは`2e82c2a`。取得したIPAのSHA-256は`c10c1a7138515ea967470bc8658dc8f832c23cf6fba93588fd95c35068ee37d8`で、ビルド側の記録と一致した。Windows上でも、本体・共有拡張のビルド番号3、表示名・起動スキーム・グループ要求を読み返した。AltServerでの再署名と実機連携は未検証。
 
 ビルド3の初回Workflow `38190810251`は、iPhone用IPA生成とSimulator用コンパイルまで成功したが、Simulatorの起動待ちが長時間完了せず、実行を停止した。生成済みIPAは保存できた。再実行ではIPAをSimulator確認より先に保存し、Simulator工程を5分で打ち切る構成にした。IPAはArtifact `iphone-share-probe`、Simulatorのログと取得できた画面は別の`iphone-share-probe-ui`へ保存する。
