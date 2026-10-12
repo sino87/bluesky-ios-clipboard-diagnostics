@@ -1,58 +1,60 @@
-# Bluesky本体でのiPhone検証
+# Full Bluesky iPhone verification build
 
-公式アプリのReact Native投稿画面と依存ライブラリを含む検証用IPAを、専用リポジトリでビルドする。Share Probeとは別のアプリであり、Share Extension・App Groups・画像/動画の共有経路を残す。
+This build includes Bluesky's actual React Native composer and dependencies. It retains the Share Extension, App Groups, and existing image/video routes, and is separate from the small Share Probe.
 
-2026-10-12、[修正版のビルドとIPA検査](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38199595875)が成功した。無料署名したIPAをiPhoneで起動し、実際の投稿画面に本文とURLが1回ずつ表示され、リンクプレビューが生成されることを確認した。画像1枚の共有も成功報告を得た。通常ペーストは、同じコピー内容を使って検証版と公式アプリの両方で成功し、今回の条件ではURL欠落を再現していない。ペースト処理には修正を加えていない。[検証記録](build-validation.md)を参照。複数画像・動画の共有と投稿送信は未確認。
+On 2026-10-12, the [patched build and IPA checks](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38199595875) passed. The re-signed app launched on an iPhone and preserved the caption, line break, and URL once in the actual composer, with a link preview. Sharing from the same source app dropped the URL in the installed official app.
 
-共有シートの同じ元アプリによる比較では、普段使う公式Blueskyは本文だけ入りURLが欠落し、修正版は本文とURLを保持した。
+A single-photo share also succeeded. Ordinary paste succeeded in both apps using the same clipboard under the current conditions; paste handling is unchanged. See the [validation record](build-validation.md). Multiple-image/video transfer and post submission remain untested.
 
-## ビルド構成
+## Configuration
 
-- 元コード: `bluesky-social/social-app` の `46d98dd457a197cee8502863b420222508f29fa6`。
-- 表示名: `Bluesky Share Test`。ID: `org.sino87.blueskysharetest`。URLスキーム: `sino87blueskysharetest`。
-- `fixed`: このリポジトリの `share-text-url.patch` を適用。`baseline`: 同じ設定で修正前をビルド。
-- 投稿入力コードは変更せず、SHA-256で確認する。名前、ID、共有領域、リンクの解析先だけを検証用に調整する。
-- AltServerが割り当てたApp Groupを、署名後の `ALTAppGroups` から本体と拡張で取得する。割り当てが曖昧な場合は停止する。
-- Share Extensionと通知サービス拡張を同梱する。通知サービス拡張の存在は、Push通知が使えることを意味しない。
+- Upstream: `bluesky-social/social-app` at `46d98dd457a197cee8502863b420222508f29fa6`.
+- Display name: `Bluesky Share Test`.
+- Bundle ID: `org.sino87.blueskysharetest`.
+- URL scheme: `sino87blueskysharetest`.
+- `fixed` applies `share-text-url.patch`; `baseline` uses the same configuration without that patch.
+- The composer input file is unchanged and checked by SHA-256.
+- App Group references use the single matching group assigned in AltServer's `ALTAppGroups` metadata.
+- The Share Extension and notification-service target remain bundled. A bundled notification service does not mean remote push is available.
 
-無料アカウントの機能制約に合わせ、Push通知、App Clip、関連ドメインによる起動、通知のコミュニケーション機能、追加メモリー権限を検証対象から外す。年齢範囲の権限とOTA更新も含めない。年齢確認など、これらの機能に依存する画面の検証には使用できない。
+The free-signing configuration excludes remote push, App Clip, associated-domain launch, communication notifications, extra memory entitlements, the declared age-range entitlement, and OTA updates. Screens depending on those capabilities are outside this verification scope.
 
-[Appleの対応機能表](https://developer.apple.com/help/account/reference/supported-capabilities-ios/)では、無料アカウントでもApp Groupsを利用できる。既存のShare ProbeではAltServer署名後の共有コンテナー連携に成功した。本体IPAでも、App Groupsを使う画像1枚の転送に成功したとの利用者報告を得た。
+[Apple's capability table](https://developer.apple.com/help/account/reference/supported-capabilities-ios/) lists App Groups for free accounts. The small probe verified its container round trip; the full-app single-photo result exercises the existing group-based media transfer.
 
-検証用の変更は使い捨ての `upstream` checkoutにのみ適用する。公式リポジトリ向けの修正差分には、これらのビルド設定を含めない。
+Verification adjustments are applied only to the disposable `upstream` checkout. They are outside the proposed application patch.
 
-## クラウドビルド
+## Cloud build
 
-Actionsの `Bluesky iPhone verification build` を手動実行し、まず `fixed` を選ぶ。公開リポジトリの標準macOSランナーを使用する。Appleの認証情報・署名証明書・Blueskyのログイン情報はActionsに渡さない。
+Run `Bluesky iPhone verification build` manually and select `fixed` first. The workflow uses a standard macOS runner in this public repository. No Apple credentials, signing certificates, or Bluesky login are supplied to Actions.
 
-[GitHubの料金説明](https://docs.github.com/en/billing/concepts/product-billing/github-actions)では公開リポジトリの標準ランナー実行は無料。Artifactの保存容量には別の上限があるため、IPAとログのみを1日保存し、DerivedDataやPodsをアップロードしない。
+[GitHub's billing documentation](https://docs.github.com/en/billing/concepts/product-billing/github-actions) states that standard-runner execution is free for public repositories. Artifact storage has separate limits. Only the IPA and logs are retained for one day; Pods and DerivedData are not uploaded.
 
-Node.js、pnpm、元ソースのSHAを固定し、依存関係は元のlockfileでインストールする。Expoのprebuildでネイティブプロジェクトを自動生成し、CocoaPodsで依存関係を解決してReleaseビルドを作る。元設定のGit参照を含むPod依存関係については、lockfileをこの検証リポジトリで固定していない。
+The workflow pins Node.js, pnpm, and the upstream commit, installs using the upstream lockfile, generates the native project through Expo prebuild, installs CocoaPods dependencies, and archives a Release build. Git-referenced Pod dependencies from upstream are not separately locked in this repository.
 
-成果物 `bluesky-iphone-fixed` の `BlueskyShareTest-resign.ipa` をダウンロードする。Appleの署名前のIPAであり、これだけでインストール成功とは扱わない。Release用JavaScript、iPhone用の実行ファイル、2つの拡張、App Groupsの要求、公式アプリとは異なるURLスキームをパッケージ時に確認する。Artifactの保存期間は1日。
+Download `BlueskyShareTest-resign.ipa` from `bluesky-iphone-fixed`. It needs Apple Account re-signing before installation. Packaging checks the Release JavaScript bundle, iPhone executables, both extensions, App Group requests, and the isolated URL scheme.
 
-## Windowsからインストール
+## Install from Windows
 
-1. 既存のAltServerを終了する。
-2. [長いTEMPパスで起動するランチャー](../device-probe/windows/start-altserver-long-temp.cmd)から起動する。Share Probeで確認した、共有拡張の署名権限が欠落する問題を避けるため。
-3. iPhoneを接続し、AltServerのIPAインストールから `BlueskyShareTest-resign.ipa` を選び、手元でApple Accountによる署名を行う。
-4. iPhoneで `Bluesky Share Test` を開く。公式Blueskyと区別し、既存アカウントでログインする。新規アカウント作成の検証は不要。
+1. Exit existing AltServer processes.
+2. Start it with the [long-form TEMP launcher](../device-probe/windows/start-altserver-long-temp.cmd), the workaround confirmed during Share Probe signing.
+3. Connect the iPhone and install `BlueskyShareTest-resign.ipa` through AltServer, entering Apple Account credentials locally.
+4. Open `Bluesky Share Test` and sign in with an existing Bluesky account.
 
-署名時にアプリIDの上限などで失敗したら、そのエラーを確認してから対処する。共有拡張を削除してインストールを通さない。
+If signing fails because of an app-ID limit or another error, inspect that error before changing the build. Do not remove the Share Extension to bypass an installation failure.
 
-## 実機テスト
+## Device checks
 
-最初は投稿の送信をせず、投稿欄で確認する。
+Inspect the composer without submitting a post.
 
-| 操作 | 確認する結果 |
+| Operation | Expected observation |
 | --- | --- |
-| Setlogの共有シートから `Bluesky Share Test` | 元の本文・改行とURLを含む投稿画面が開く。URLは1回だけ |
-| テキストのみを共有 | 元のテキストを保持 |
-| URLのみを共有 | URLを含む投稿画面が開く |
-| 本文に既に含まれるURLを別添付でも共有 | 同じURLを重複して追加しない |
-| 画像を共有 | 添付画像を投稿画面で確認。画像の共有領域へのアクセスも検証する |
-| コピーしたテキストと別URLアイテムを投稿欄に通常ペースト | 本文とURLが両方入るかを記録する。この経路には今回の修正を加えていない |
+| Share a caption and a separate URL to `Bluesky Share Test` | Original caption and line break, URL once |
+| Share text only | Original text retained |
+| Share URL only | URL appears in the composer |
+| Share a caption already containing the separate URL | No duplicate URL appended |
+| Share an image | Image attachment appears; shared-container transfer exercised |
+| Paste copied text and URL into an empty composer | Record the actual result independently; this path is not patched |
 
-TVerの現在の共有内容がURLのみなら、URLのみの確認に使う。以前のテキスト＋URLの再現例と区別する。
+Use an app that still supplies separate text and URL attachments for the direct-share comparison. An app that now shares only a URL is a URL-only control, not the original caption/URL reproduction.
 
-必要なら次に `baseline` を作り、同じ検証アプリを上書きして比較する。コピーされた複数アイテムと、共有シートの複数添付は別の経路として記録する。招待コード、署名者ID、トークンを公開の検証記録にそのまま載せない。
+If needed, build `baseline` next and replace the verification app for a same-source comparison. Distinguish multiple pasteboard items from multiple share attachments. Redact invitation codes, account details, signing identifiers, and diagnostic tokens in published results.

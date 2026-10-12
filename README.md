@@ -1,40 +1,42 @@
-# iOS共有・ペーストの診断用テスト
+# Bluesky iOS sharing and paste diagnostics
 
-状態: **修正版は19件のXCTestに成功。実機の同じ共有元による比較で、公式BlueskyはURLが欠落し、修正版は本文とURLを保持。画像1枚の共有も成功報告あり。通常ペーストは同じクリップボードで両アプリとも成功し、今回の条件では欠落を再現していない。**
+This repository contains an isolated test harness and device verification builds for a focused iOS Share Extension fix. The proposed application change is maintained separately in the [Bluesky fork](https://github.com/bluesky-social/social-app/compare/main...sino87:social-app:fix/ios-shared-text-url).
 
-[最終修正版の18ケース](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123423399/job/114422690014)と[Lint・iOS/Android/WebのTypeScriptチェック](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123425316/job/114422695781)が成功した。ネイティブLintは元コードにもある25件のSwiftLint違反（12 errors）で失敗し、修正前後で同じ診断だった。ktlintは未実行。これらのCIチェックと、後述の実機検証は別の結果として扱う。
+**Current result:** the patched controller passes 19 native tests. On an iPhone, sharing from the same source app drops the URL in the installed official app but preserves the caption and URL in the patched full-app build. A single-photo share also succeeded. Ordinary paste succeeded in both apps using the same clipboard under the current conditions; the patch does not change paste handling.
 
-[最新の19ケース](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38195607360/job/114637433883)と[Share Probeの実機検証記録](device-probe/device-validation.md)を参照。上記18ケースのリンクは前回の検証結果。
+## Verification paths
 
-Blueskyの修正PRに含めず、専用の公開検証リポジトリで使う。SimulatorテストとクラウドビルドにはApple Account、署名証明書、Blueskyのログインは不要。Workflowは手動実行だけで、GitHubへの作成・Push・実行はユーザーの確認後に行う。
+| Component | Purpose | Evidence |
+| --- | --- | --- |
+| Isolated UIKit tests | Exercise the actual Swift controller with typed item providers; compare ordinary `UITextView.paste` behavior | [19 passing tests](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38195607360/job/114637433883) |
+| Share Probe 5 | Observe real Share Extension input and verify the App Group container round trip | [Setup](device-probe/README.md), [device results](device-probe/device-validation.md) |
+| Full Bluesky verification app | Test the actual React Native composer, Share Extension, and media transfer on an iPhone | [Setup](bluesky-build/README.md), [device results](bluesky-build/build-validation.md) |
 
-## Bluesky本体の検証用IPA
+All workflows run manually. Simulator tests and cloud builds require no Apple Account, signing certificate, or Bluesky login. Installing a device build requires re-signing locally. These diagnostic files and verification-only build adjustments are outside the proposed Bluesky PR.
 
-[本体のビルド構成と実機テスト手順](bluesky-build/README.md)を用意した。公式アプリとは別のIDで、実際の投稿画面・通常ペースト・Share Extension・App Groupsを残して確認する。[本体IPAの実機検証記録](bluesky-build/build-validation.md)では、本文＋URLの共有とリンクプレビュー、画像1枚の共有、および両アプリでの通常ペースト成功報告を記録した。複数画像・動画の転送は未確認。
+## Native regression tests
 
-## iPhone実機用の検証アプリ
+The harness copies the upstream `ShareViewController.swift` into an isolated UIKit host. It substitutes the extension input and captures the generated compose link while running the controller's actual logic.
 
-[実機検証アプリのセットアップ](device-probe/README.md)に、本体＋実際のShare Extension＋App Groupsを使った小さな検証構成を追加した。手動Workflow `iPhone share probe IPA` はデバイス用の再署名用IPAを生成する。App Groupsの要求を残す仮署名があり、Appleの開発署名・プロファイルはない。無料Apple Accountでの署名・インストール・共有連携は、Windowsと実機で別途確認する。コードのビルドやIPAの生成成功だけでは、この確認が完了したことにはならない。
+Cases cover text-only and URL-only input, separate attachments and extension items, reversed attachment order, duplicate URLs, distinct URLs with a shared prefix, multiple URLs, empty or unreadable text, text mixed with images or file URLs, and existing file/media URL classification. A regression also covers a caption duplicated in item metadata and a text attachment.
 
-## 調べる範囲
+The workflow compares the official 1.129.0 tag, pinned upstream commit `46d98dd457a197cee8502863b420222508f29fa6`, and that commit with `share-text-url.patch`. The [unpatched regression fails](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38195607360/job/114637433920); the patched job passes all 19 tests. The overall workflow is expected to fail when it includes failing baseline jobs. Build failures and assertion failures are recorded separately.
 
-- 本物の`UITextView.paste`に、テキストのみ・URLのみ・別アイテムのテキストとURL・単一アイテムの統合テキストを渡す。
-- 公式の`ShareViewController.swift`をそのままテスト用ホストへコピーする。入力の`NSExtensionItem`と出力のディープリンクだけをテスト用のオブジェクトで置き換え、実際の共有処理を呼ぶ。
-- 共有のテキストのみ・URLのみ・別添付・別共有アイテム・添付順序・既に本文へ含まれるURLを検証する。
-- ファイルURLとWeb画像URLの既存分類を確認する。
-- URLの重複・部分一致・複数URL、テキスト経路での画像混在を確認する。
+Fixtures use typed `NSItemProvider` values, including a URL object for `public.url`. They do not reproduce a pasteboard viewer's XML byte representation. The Simulator runtime is printed by the workflow and need not match the physical device's OS.
 
-テストは「URLを含むべき」と判定するため、現行コードでの失敗が想定される。失敗を成功扱いする設定はない。ビルド失敗とアサーション失敗はログで区別する。ランナーのSimulatorバージョンを出力するが、iOS 26.6.2と一致する保証はない。
+The four ordinary-paste fixtures use a standard `UITextView`, not React Native or `expo-paste-input`. They preserve text and URL items, but do not establish behavior in the full Bluesky composer. Current device paste observations are recorded separately.
 
-`UITextView`テストにはReact Nativeや`expo-paste-input`を組み込んでいない。初回の両バージョンで4ケースは成功し、別アイテムのテキストとURLを両方挿入できた。Blueskyの投稿欄全体のテストではなく、実際のReact Native投稿欄と依存ライブラリを含めた検証が必要。初回の共有データでは正常系も失敗したため、型付きの`NSItemProvider(item:typeIdentifier:)`へ変更して確認し直した。型付きデータでは共有の正常系が成功し、別添付・別アイテムと添付順序のテストが失敗した。
+## Project checks
 
-`public.url`は`URL`オブジェクトとして設定する。スクショのViewerが表示したXMLバイト列をそのまま再現したとは扱わない。実際のTVer入力での検証は別に必要。
+[Lint and iOS/Android/Web TypeScript checks](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123425316/job/114422695781) pass. Native lint reports the same 25 SwiftLint diagnostics, including 12 errors, before and after the patch. Existing violations fail that job; ktlint is not reached.
 
-## 実行
+The [earlier 18-case run](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38123423399/job/114422690014) predates the metadata regression. Use the 19-case run for the current result.
 
-このディレクトリの内容を専用公開リポジトリのルートへ配置し、Actionsの`iOS clipboard diagnostics`を手動実行する。Workflowは1.129.0の公式タグ、調査時点の最新SHA、その最新SHAへ`share-text-url.patch`を適用した版を比較する。修正差分は診断ジョブ内のcheckoutだけに適用し、公式リモートを変更しない。baselineの失敗とfixedの成功をそれぞれ確認し、Workflow全体が赤いだけで修正失敗と判定しない。
+## Run the isolated tests
 
-Macで直接実行する場合:
+On GitHub Actions, select `iOS clipboard diagnostics` and run it manually. The patch is applied only to the job's disposable checkout.
+
+On a Mac:
 
 ```bash
 gem install xcodeproj --version 1.28.1 --user-install --no-document
@@ -48,10 +50,12 @@ xcodebuild test \
   CODE_SIGNING_ALLOWED=NO
 ```
 
-WindowsではXcodeを実行できない。GitHub ActionsのArtifactから`xcodebuild.log`を取得し、こちらで結果を解析する。初回・2回目は`.xcresult`も保存したが、以後は保存容量を抑えるためログだけをアップロードする。Simulator用のテストホストはiPhoneへインストールするIPAではない。
+Windows cannot run Xcode. Use the macOS workflow and download its logs. Current jobs upload logs rather than DerivedData or full test-result bundles to limit artifact storage.
 
-## 判定後の作業
+The isolated test host has no Share Extension or App Groups. It cannot validate signing, installation, share-sheet integration, or the shared container. Use the device probe or full-app build for those paths.
 
-共有テストのURL欠落を実際に確認してから、テキストとWeb URLの読み込み・統合を修正する。画像と動画の既存経路や共有の有効化条件を変更しない。通常ペーストの修正先は、標準`UITextView`と実際の投稿欄の比較結果から選ぶ。
+## Scope and remaining checks
 
-このテストホストには共有拡張ターゲットとApp Groupsがないため、無料署名・共有シート・共有コンテナーの動作は検証できない。それらには別の実機用最小検証アプリが必要。このホストを共有機能を維持した実機テストの代わりにしない。
+The proposed fix handles shared text and non-file URLs while preserving existing image/video routes and activation limits. Multiple-image transfer, video transfer, and post submission still need device validation. The original ordinary-paste failure was not reproduced in the current same-clipboard comparison; no paste-specific fix is claimed.
+
+Publish only sanitized device evidence. Keep invitation codes, account details, signing profiles, private keys, and raw personal screenshots outside the repository.

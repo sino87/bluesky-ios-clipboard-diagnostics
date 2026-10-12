@@ -1,64 +1,52 @@
-# Bluesky本体IPAのビルド検証
+# Full Bluesky build and device validation
 
-2026-10-12に修正版のiPhone用IPAを作成した。独立したShare Probeとは別の、実際のReact Nativeアプリのビルド結果。
+A patched iPhone IPA was built on 2026-10-12. This is the actual React Native application, separate from the small Share Probe.
 
-| 項目 | 結果 |
+## Build evidence
+
+| Item | Result |
 | --- | --- |
-| Actions | [38199595875](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38199595875) — success |
-| ビルド設定のコミット | `ee2e2cddad58aa0a036187b51d9fdf0f9749ac38` |
-| 元コード | `46d98dd457a197cee8502863b420222508f29fa6` + `share-text-url.patch` |
-| アプリの版 | `1.135.0` |
-| Xcode | `26.6`、ビルド `17F113` |
-| ジョブの所要時間 | 38分49秒 |
-| IPA | `BlueskyShareTest-resign.ipa`、50,970,015 bytes |
+| Actions run | [38199595875](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38199595875) — success |
+| Build-configuration commit | `ee2e2cddad58aa0a036187b51d9fdf0f9749ac38` |
+| Upstream | `46d98dd457a197cee8502863b420222508f29fa6` plus `share-text-url.patch` |
+| App version | `1.135.0` |
+| Xcode | `26.6`, build `17F113` |
+| Job duration | 38 minutes 49 seconds |
+| IPA | `BlueskyShareTest-resign.ipa`, 50,970,015 bytes |
 | SHA-256 | `d534da60453b3477494779eba2d2fa7c582e8671c2da19ec8a434becaf8d01ab` |
 
-## 確認済み
+Checks passed for Expo configuration, isolated compose-link parsing, and extension retention. The iPhone Release archive contains the main app, Share Extension, notification-service extension, and `main.jsbundle`; it does not require a PC development server.
 
-- Expo設定の読み込み、独自URLスキームの投稿リンク解析、拡張ターゲット保持のチェックに成功。
-- XcodeのiPhone向けReleaseアーカイブに成功。本体・共有拡張・通知サービス拡張を保持。
-- 実行ファイルのビルド先がiOSであり、Simulator用ではないことを検査。
-- Release用 `main.jsbundle` を同梱。PCの開発サーバーを前提とする構成ではない。
-- App Groupsの要求を仮署名に保持し、署名の整合性検査に成功。Apple Accountによる再署名前の状態。
-- 投稿入力ファイルのSHA-256が元コードのGit blobと一致。`21a7d6cd9b9073581c4b7e224b19d36dca5bcbe5b76813223669754ccaa19343`。
-- 共有拡張の `MainAppScheme` が `sino87blueskysharetest` であることを検査。
-- Windowsへ取得したIPAのハッシュがビルド記録と一致。ZIP内の本体・2拡張・JavaScriptも確認。
+Packaging verified iOS rather than Simulator executables, requested App Groups in ad-hoc signatures, signature consistency, and the extension's `MainAppScheme` value `sino87blueskysharetest`. These were build-time checks before Apple Account re-signing.
 
-## 実機での本文＋URL共有
+The composer input matches the pinned upstream Git blob: SHA-256 `21a7d6cd9b9073581c4b7e224b19d36dca5bcbe5b76813223669754ccaa19343`. The Windows download matched the IPA hash, and its app, both extensions, and JavaScript bundle were inspected.
 
-2026-10-12、利用者がWindowsのAltServerでこのIPAを署名・インストールし、iPhoneでの起動を報告した。続いて、元アプリの共有シートから `Bluesky Share Test` を選択した結果のスクリーンショットを確認した。
+## Physical-device results
 
-- 実際のBluesky投稿画面に元の本文・改行・別添付のURLが表示された。
-- URLは本文に1回だけ表示され、リンクのプレビューも生成された。
-- 独立したShare Probeに加え、React Nativeの投稿画面まで含む共有経路を実機で確認できた。
-- 送信ボタンを押した後の投稿処理は検証していない。
+The tester re-signed and installed the IPA using AltServer on Windows and reported successful launch. A screenshot then confirmed a direct share from the native source app in the actual Bluesky composer. The caption and line break were retained, the separate URL appeared once, and a link preview was generated.
 
-共有元は、先のShare Probeで本文を `public.plain-text`、URLを別の `public.url` 添付として渡すことを確認したアプリ。招待コードやアカウント画像を含む元のスクリーンショットは公開記録に含めない。
+That source app had already been observed in Share Probe to supply `public.plain-text` as one attachment and `public.url` as another. Original screenshots contain invitation codes and account imagery and are kept outside this public repository.
 
-続いて、同じ共有元の共有シートから普段使う公式Blueskyを選ぶ比較を行い、利用者が本文だけ入りURLが欠落したことを報告した。修正版では本文とURLを保持したため、実機でも共有シートでの修正前後の差を確認できた。
+The tester then repeated the direct share to the installed official app and reported that only the caption appeared, with the URL missing.
 
-| 操作 | 普段使う公式Bluesky | 修正版の検証ビルド |
+| Operation | Installed official Bluesky | Patched verification build |
 | --- | --- | --- |
-| 同じ元アプリの共有シートから直接共有 | 本文のみ、URLが欠落 | 本文＋URL、重複なし、リンクプレビューあり |
-| 同じコピー内容を通常ペースト | 本文＋URL | 本文＋URL |
-| 写真アプリから画像1枚を共有 | 今回は比較していない | 添付成功の利用者報告あり |
+| Direct share from the same source app | Caption only; URL missing | Caption and URL once, with link preview |
+| Ordinary paste using the same clipboard | Caption and URL | Caption and URL |
+| One photo shared from Photos | Not compared in this trial | Tester reports successful attachment |
 
-## 実機での画像1枚の共有
+### Single-photo transfer
 
-2026-10-12、写真アプリから画像1枚を `Bluesky Share Test` へ共有する手順を案内し、利用者から投稿欄に添付されたとの報告を受けた。
+The tester shared one image from Photos to `Bluesky Share Test` and reported that it appeared as an attachment. The existing image route writes into the App Group container and passes its URI to the main app, so this result exercises that media-transfer path. It is separate from the link preview's image and does not establish successful post submission.
 
-この画像経路では、共有拡張がApp Groupsの共有領域へ画像を書き込み、そのURIを本体へ渡す。単一画像の転送について、共有領域を使う既存経路が実機で動作する結果を得た。本文＋URLのリンクプレビュー画像とは別のテストで、送信後の結果は確認していない。
+### Ordinary paste
 
-## 実機での通常ペースト
+The tester copied from the source app's share sheet and pasted into an empty verification composer. The caption and URL both appeared. Without copying again, the same clipboard was pasted into the installed official app, which also preserved both.
 
-2026-10-12、元アプリの共有シートで「コピー」を選び、検証版の空の投稿欄へ通常ペーストする手順を案内した。利用者から、本文とURLが両方入ったとの報告を受けた。
+The patch changes only the Share Extension, not paste handling or the composer input. The pasteboard item layout for this trial was not captured. The original ordinary-paste failure is not reproduced under the current conditions; no paste-specific fix is claimed, and the difference from the original conditions has not been identified.
 
-続いて、コピーし直さず普段使う公式Blueskyの空の投稿欄へペーストする手順を案内し、こちらでも本文とURLが両方入ったとの報告を受けた。同じクリップボードを使った今回の比較では、両アプリで成功し、通常ペーストのURL欠落は再現していない。
+## Remaining checks
 
-今回のパッチはShare Extensionのみを変更し、通常ペーストや投稿入力コードは変更していない。この試行のUIPasteboardアイテム構成は取得していないため、当初の複数Pasteboard Itemによる欠落が修正されたとは判定しない。共有元・コピー方法・データ表現など、当初の条件と現在の条件の差は特定していない。
+Multiple-image transfer, video transfer, and post submission are untested. Do not generalize the single-photo result to every media format or source app.
 
-## 実機での確認待ち
-
-複数画像・動画の共有、送信後の投稿結果。画像1枚の成功を、すべてのメディア形式や共有元の正常動作へ一般化しない。
-
-無料署名用の構成差は[README](README.md)を参照。Push通知など、その構成で外した機能の動作は検証対象外。
+See the [configuration guide](README.md) for verification-only differences. Capabilities excluded for free signing, including remote push, are outside the test scope.

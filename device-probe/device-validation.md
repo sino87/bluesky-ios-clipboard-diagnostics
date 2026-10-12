@@ -1,30 +1,28 @@
-# 共有処理のiPhone実機検証
+# Physical-device validation of the share controller
 
-検証日: 2026-10-12 11:37（日本時間）。ユーザーが提供した画面と処理結果に基づく。
+Validation date: 2026-10-12, based on tester-supplied screenshots and processing output.
 
-## 検証対象
+## Tested configuration
 
-Share Probe 5、ソース`01c48b5`、[IPAビルド38194298427](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38194298427)。公式`46d98dd`へ共有修正`70271fa`と同じ差分を適用したコントローラーを、実際のShare Extensionに組み込んだ。検証用のグループ参照と起動スキーム、追加観測・保存処理はBluesky本体との差分である。
+Share Probe 5, source `01c48b5`, [IPA build 38194298427](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38194298427). Its real Share Extension contains upstream `46d98dd` with the same controller patch as `70271fa`. The probe uses its own App Group and URL scheme and adds input observation and result storage.
 
-Windows、無料Apple Account、AltServer 1.8.0.0で再署名・インストールした。短縮名を避けたTEMP/TMPでAltServerを起動した後、前回なかった拡張の署名XMLにグループ宣言が入り、DER宣言ブロックも存在する状態になった。DERの値は解析していない。共有拡張とApp Groupsを削除せずに試験した。
+The IPA was re-signed and installed using Windows, a free Apple Account, and AltServer 1.8.0.0. After AltServer was launched with long-form TEMP/TMP paths, the extension's previously missing XML group declaration and DER entitlement block were present. DER values were not decoded. The Share Extension and App Groups were retained.
 
-## 実入力と結果
+## Observed input and output
 
-送信元の共有は1つの`NSExtensionItem`、2つの添付だった。
+The source supplied one `NSExtensionItem` with two attachments:
 
-| 場所 | 型・実行時型 | 内容 |
-|---|---|---|
-| アイテムの`attributedContentText` | 本文メタデータ | 本文 |
-| 添付0 | `public.plain-text`、`__NSCFString` | 同じ本文 |
-| 添付1 | `public.url`、`NSURL` | Web URL |
+| Location | Type / runtime type | Content |
+| --- | --- | --- |
+| Item `attributedContentText` | Text metadata | Caption |
+| Attachment 0 | `public.plain-text` / `__NSCFString` | Same caption |
+| Attachment 1 | `public.url` / `NSURL` | Web URL |
 
-確認できた結果は以下のとおり。
+The extension read the host's test token, saved its processing result, and the host read it back. The host-extension-host round trip succeeded.
 
-- 本体で作った確認トークンを拡張が読み、拡張の保存結果を本体が読み返した。「本体 → 拡張 → 本体の連携成功」と表示された。
-- 修正済みコントローラーの生成したcomposeリンクから、本文とURLを一度ずつ含む`composeText`を取得できた。本文中の改行も残った。
-- `openDispatched`は`true`だった。これは元コントローラーが起動要求を渡した結果で、Bluesky本体での投稿完了を意味しない。
+The compose link decoded to text containing the caption and URL exactly once, with the original line break preserved. `openDispatched` was `true`, indicating URL dispatch rather than successful post submission.
 
-以下は実機JSONの主要項目を一般化した例。本文・招待コード・URL・確認トークンを置き換え、個人に紐づくグループ接尾辞と受信時刻の数値は載せていない。元の画面や未加工JSONは公開していない。
+The following example substitutes generic text, an invitation code, URL, and token. The personal signing-group suffix and raw receipt timestamp are omitted. Original screenshots and unsanitized JSON are not committed.
 
 ```json
 {
@@ -49,8 +47,8 @@ Windows、無料Apple Account、AltServer 1.8.0.0で再署名・インストー�
 }
 ```
 
-## 回帰テストと未検証事項
+## Regression coverage and limits
 
-同じ添付構造と重複する本文メタデータを一般化した`testSharePlainTextAndURLWithContentMetadata`は、[未修正版](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38195607360/job/114637433920)で失敗し、[修正版](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38195607360/job/114637433883)で成功した。修正版は19テストすべて成功。比較Workflow全体のfailureは、未修正版の失敗を含むためで、修正版ジョブの失敗ではない。
+The generalized `testSharePlainTextAndURLWithContentMetadata` fixture matches the attachment layout and duplicate caption metadata. It [fails without the patch](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38195607360/job/114637433920) and [passes with it](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38195607360/job/114637433883). All 19 patched tests pass. The comparison workflow's overall failure includes expected unpatched assertion failures.
 
-実機で確認したのはこの1件の直接共有と診断アプリ内の本文生成。フルBlueskyの投稿画面・投稿完了、画像・動画の実機転送、通常ペーストの修正は未検証。更新後にURLだけを共有するようになった別アプリの結果は、この本文＋URLの試験と分けて扱う。
+This probe result establishes one direct share and controller-generated text, not full-app composition, media transfer, ordinary-paste behavior, or post submission. Later full-app observations are recorded [separately](../bluesky-build/build-validation.md). A different source app's updated URL-only behavior is not part of this caption/URL trial.

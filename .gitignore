@@ -2,3 +2,15 @@ generated/
 results/
 DerivedData/
 .DS_Store
+*.ipa
+*.xcarchive/
+*.mobileprovision
+*.p12
+*.p8
+*.key
+*.pem
+.env
+.env.*
+!.env.example
+latest-share.json
+host-token.txt
