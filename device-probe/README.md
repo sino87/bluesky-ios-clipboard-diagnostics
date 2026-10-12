@@ -40,6 +40,8 @@ Simulator用のビルドと起動・スクリーンショット取得も成功�
 
 PCのSideloadlyキャッシュにはプロファイルのないIPAしか見つからず、インストール済みの署名情報はそこから確認できなかった。ビルド2に、本体と同梱共有拡張の`embedded.mobileprovision`からApp Groupsの宣言だけを表示する診断を追加した。CMS内のplistを読む処理で、署名・証明書の検証を代行しない。読み取れない場合は「権限なし」と扱わず、未判定として表示する。証明書、Apple Account、端末IDは表示しない。
 
+診断ビルド2の[Workflow 38189236939](https://github.com/sino87/bluesky-ios-clipboard-diagnostics/actions/runs/38189236939)は成功した。ソースは`54a8559`。App Groupsあり・なし・不正データと、OpenSSLで生成したCMSのパーサー検証、iPhone用archive、仮署名内のグループ要求、Simulator起動と追加表示を確認した。ダウンロードしたIPAのSHA-256は`c78d4d26e98f75de8fc0c16fc698c5d2c24d9a49fb25d9d28bc3cbc6dad56add`で、クラウド側の記録と一致する。再署名後の実機プロファイルの表示と共有コンテナーの成功は未確認。同じApple AccountとBundle IDで既存の検証アプリへ上書きし、「署名後のApp Groups許可」を確認する。
+
 表示する「設定IDの許可」はプロファイル内の配列との一致判定で、コード署名や共有領域の実動作を保証しない。ここでApp Groupsがないのか、IDが異なるのかを確認し、実際の署名情報と照合する。診断を追加しただけで権限不足が解消するわけではない。同じIPAを繰り返しインストールする前に、この表示を確認する。
 
 ## iPhoneで確認する順序
