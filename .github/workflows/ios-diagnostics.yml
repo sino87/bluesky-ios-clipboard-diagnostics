@@ -14,22 +14,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - version: '1.135.0'
-            repository: sino87/social-app
-            ref: '70271fa73dc593bc53a96a1c4d05e4a7f1ac73a4'
-            variant: encoding-baseline
-          - version: '1.135.0'
-            repository: bluesky-social/social-app
-            ref: '46d98dd457a197cee8502863b420222508f29fa6'
-            variant: fixed
+          - variant: upstream-baseline
+          - variant: fixed
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          repository: ${{ matrix.repository }}
-          ref: ${{ matrix.ref }}
+          repository: bluesky-social/social-app
+          ref: '44a037a63575c800955eeb9e0a1024e7b2e4c063'
           path: upstream
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
@@ -67,6 +61,10 @@ jobs:
           print(iphones[0]["udid"])
           ')
           echo "Selected iPhone simulator: $device_id"
+          test_selection=()
+          if [ "${{ matrix.variant }}" = upstream-baseline ]; then
+            test_selection+=("-only-testing:ClipboardDiagnosticsTests/ClipboardDiagnosticsTests/testShareSeparateTextAndURLAttachments")
+          fi
           xcrun simctl list devices available | grep "$device_id"
           xcodebuild test \
             -project generated/ClipboardDiagnostics.xcodeproj \
@@ -78,15 +76,16 @@ jobs:
             -test-timeouts-enabled YES \
             -default-test-execution-time-allowance 30 \
             -maximum-test-execution-time-allowance 60 \
+            "${test_selection[@]}" \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee results/xcodebuild.log
       - name: Verify native compose links in the Bluesky receiver
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && matrix.variant == 'fixed' }}
         run: node verify-compose-links.mjs results/xcodebuild.log upstream
       - name: Preserve test output
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: clipboard-diagnostics-${{ matrix.version }}-${{ matrix.variant }}
+          name: clipboard-diagnostics-${{ matrix.variant }}
           path: results/xcodebuild.log
           retention-days: 1
           if-no-files-found: warn
