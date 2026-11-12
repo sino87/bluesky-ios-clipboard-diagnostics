@@ -61,9 +61,9 @@ jobs:
           print(iphones[0]["udid"])
           ')
           echo "Selected iPhone simulator: $device_id"
-          test_selection=()
+          test_args=(-parallel-testing-enabled NO)
           if [ "${{ matrix.variant }}" = upstream-baseline ]; then
-            test_selection+=("-only-testing:ClipboardDiagnosticsTests/ClipboardDiagnosticsTests/testShareSeparateTextAndURLAttachments")
+            test_args+=("-only-testing:ClipboardDiagnosticsTests/ClipboardDiagnosticsTests/testShareSeparateTextAndURLAttachments")
           fi
           xcrun simctl list devices available | grep "$device_id"
           xcodebuild test \
@@ -72,11 +72,10 @@ jobs:
             -destination "platform=iOS Simulator,id=$device_id" \
             -derivedDataPath DerivedData \
             -resultBundlePath results/diagnostics.xcresult \
-            -parallel-testing-enabled NO \
             -test-timeouts-enabled YES \
             -default-test-execution-time-allowance 30 \
             -maximum-test-execution-time-allowance 60 \
-            "${test_selection[@]}" \
+            "${test_args[@]}" \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee results/xcodebuild.log
       - name: Verify native compose links in the Bluesky receiver
         if: ${{ !cancelled() && matrix.variant == 'fixed' }}
